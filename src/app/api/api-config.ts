@@ -8,7 +8,7 @@
  * PARA CAMBIAR DE DOMINIO: edita solo estas tres constantes.
  */
 const DOMINIO_PAGINA = 'paginapro.store';
-const API_DOMINIO = 'https://api-reservas.paginapro.store';
+const API_DOMINIO = 'https://reservas-api-ew53.onrender.com';
 const API_DESARROLLO = 'http://localhost:8080';
 
 function calcularUrl(): string {
