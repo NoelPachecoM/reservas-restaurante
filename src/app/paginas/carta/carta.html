@@ -1,0 +1,93 @@
+<section class="ancho seccion">
+  <div class="titulo-seccion">
+    <div>
+      <span class="etiqueta-arriba">Nuestra carta</span>
+      <h1>Qué vas a comer</h1>
+      <p class="subtitulo">
+        Los precios ya incluyen impuestos. Si tienes alguna alergia, dínoslo en las notas de tu reserva.
+      </p>
+    </div>
+    <a routerLink="/reservar" class="b-principal">Reservar mesa</a>
+  </div>
+
+  @if (error()) { <div class="aviso aviso-error">{{ error() }}</div> }
+  @if (cargando()) { <div class="cargando">Cargando la carta…</div> }
+
+  @if (etiquetas().length) {
+    <div class="filtros">
+      <span class="texto-chico texto-suave">Filtrar:</span>
+      @for (e of etiquetas(); track e) {
+        <button type="button" class="chip boton-chip" [class.chip-principal]="etiqueta() === e"
+                (click)="elegirEtiqueta(e)">{{ e }}</button>
+      }
+      @if (etiqueta()) {
+        <button type="button" class="b-suave b-chico" (click)="etiqueta.set('')">Quitar filtro</button>
+      }
+    </div>
+  }
+
+  @for (g of filtrada(); track g.id) {
+    <h2 class="grupo">{{ g.nombre }}</h2>
+    <div class="lista escalonado">
+      @for (p of g.platillos; track p.id) {
+        <article class="renglon" (click)="detalle.set(p)" tabindex="0"
+                 (keydown.enter)="detalle.set(p)" role="button">
+          <div class="renglon-texto">
+            <h3>{{ p.nombre }}</h3>
+            <p class="texto-chico texto-suave">{{ p.descripcion }}</p>
+            @if (listaDe(p.etiquetas).length) {
+              <div class="etiquetas-renglon">
+                @for (e of listaDe(p.etiquetas); track e) { <span class="chip">{{ e }}</span> }
+              </div>
+            }
+          </div>
+          <span class="precio">${{ p.precio }}</span>
+        </article>
+      }
+    </div>
+  } @empty {
+    @if (!cargando()) {
+      <div class="vacio">No hay platillos con esa etiqueta.</div>
+    }
+  }
+</section>
+
+@if (detalle(); as p) {
+  <div class="modal-fondo" (click)="detalle.set(null)">
+    <div class="modal-caja" (click)="$event.stopPropagation()">
+      <div class="modal-encabezado">
+        <div>
+          <h2>{{ p.nombre }}</h2>
+          <span class="precio">${{ p.precio }}</span>
+        </div>
+        <button class="cerrar-x" type="button" (click)="detalle.set(null)" aria-label="Cerrar">✕</button>
+      </div>
+
+      <p>{{ p.descripcion }}</p>
+
+      @if (listaDe(p.etiquetas).length) {
+        <p class="texto-chico texto-suave bloque">Características</p>
+        <div class="etiquetas-renglon">
+          @for (e of listaDe(p.etiquetas); track e) { <span class="chip chip-ok">{{ e }}</span> }
+        </div>
+      }
+
+      @if (listaDe(p.alergenos).length) {
+        <p class="texto-chico texto-suave bloque">Contiene</p>
+        <div class="etiquetas-renglon">
+          @for (a of listaDe(p.alergenos); track a) { <span class="chip chip-aviso">{{ a }}</span> }
+        </div>
+        <p class="f-ayuda">
+          Se prepara en una cocina donde se manejan todos estos ingredientes. Si tu alergia es
+          grave, avísanos en las notas de la reserva.
+        </p>
+      }
+
+      <hr class="separador" />
+      <div class="fila-botones">
+        <a routerLink="/reservar" class="b-principal" (click)="detalle.set(null)">Reservar mesa</a>
+        <button class="b-suave" type="button" (click)="detalle.set(null)">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

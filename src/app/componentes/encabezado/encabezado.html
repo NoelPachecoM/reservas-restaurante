@@ -1,0 +1,41 @@
+<header class="barra no-imprimir">
+  <div class="ancho barra-dentro">
+    <a routerLink="/" class="marca" (click)="cerrar()">
+      <span class="marca-icono">&#9733;</span>
+      <span class="marca-texto">{{ nombre() }}</span>
+    </a>
+
+    <button class="hamburguesa" type="button" (click)="alternar()" [attr.aria-expanded]="abierto()"
+            aria-label="Abrir el menú">
+      {{ abierto() ? '✕' : '☰' }}
+    </button>
+
+    <nav class="enlaces" [class.abierto]="abierto()">
+      <a routerLink="/carta" routerLinkActive="activo" (click)="cerrar()">Carta</a>
+      <a routerLink="/reservar" routerLinkActive="activo" (click)="cerrar()">Reservar</a>
+
+      @if (usuario()) {
+        <a routerLink="/mis-reservas" routerLinkActive="activo" (click)="cerrar()">Mis reservas</a>
+      }
+      @if (usuario()?.esPersonal) {
+        <a routerLink="/piso" routerLinkActive="activo" (click)="cerrar()">Piso</a>
+        <a routerLink="/cocina" routerLinkActive="activo" (click)="cerrar()">Cocina</a>
+      }
+      @if (usuario()?.esAdmin) {
+        <a routerLink="/administracion" routerLinkActive="activo" (click)="cerrar()">Administración</a>
+      }
+
+      @if (usuario()) {
+        <span class="separador-nav"></span>
+        <a routerLink="/mi-cuenta" class="yo" (click)="cerrar()" [title]="usuario()!.nombre">
+          <span class="circulito">{{ iniciales() }}</span>
+          <span class="yo-nombre">{{ usuario()!.nombre }}</span>
+        </a>
+        <button class="b-suave b-chico" type="button" (click)="salir()">Salir</button>
+      } @else {
+        <span class="separador-nav"></span>
+        <a routerLink="/entrar" class="b-principal b-chico" (click)="cerrar()">Entrar</a>
+      }
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,575 @@
+<section class="ancho seccion">
+  <div class="titulo-seccion">
+    <div>
+      <span class="etiqueta-arriba">Administración</span>
+      <h1>Panel del restaurante</h1>
+    </div>
+    <div class="fila-botones">
+      <a routerLink="/piso" class="b-suave">Vista de piso</a>
+      <a routerLink="/cocina" class="b-suave">Cocina</a>
+    </div>
+  </div>
+
+  <div class="pestanas">
+    <button type="button" [class.activa]="pestana() === 'croquis'" (click)="irA('croquis')">Croquis y mesas</button>
+    <button type="button" [class.activa]="pestana() === 'catalogos'" (click)="irA('catalogos')">Carta y áreas</button>
+    <button type="button" [class.activa]="pestana() === 'reservas'" (click)="irA('reservas')">Reservas</button>
+    <button type="button" [class.activa]="pestana() === 'reportes'" (click)="irA('reportes')">Números</button>
+    <button type="button" [class.activa]="pestana() === 'config'" (click)="irA('config')">Configuración</button>
+    <button type="button" [class.activa]="pestana() === 'usuarios'" (click)="irA('usuarios')">Cuentas</button>
+    <button type="button" [class.activa]="pestana() === 'espera'" (click)="irA('espera')">Lista de espera</button>
+  </div>
+
+  @if (error()) { <div class="aviso aviso-error">{{ error() }}</div> }
+  @if (aviso()) { <div class="aviso aviso-ok">{{ aviso() }}</div> }
+  @if (cargando()) { <div class="cargando">Un momento…</div> }
+
+  <!-- ================= Croquis y mesas ================= -->
+  @if (pestana() === 'croquis') {
+    <div class="c-caja-plana aviso-explica">
+      <strong>Arrastra las mesas</strong> para acomodarlas como están en el restaurante.
+      Las posiciones se guardan cuando le das a "Guardar acomodo". El cliente ve este mismo
+      plano al reservar.
+    </div>
+
+    <div class="barra-croquis">
+      <button class="b-principal" type="button" [disabled]="!cambiadas().size" (click)="guardarPosiciones()">
+        Guardar acomodo@if (cambiadas().size) { ({{ cambiadas().size }}) }
+      </button>
+      <button class="b-suave" type="button" (click)="cargarCroquis()">Deshacer cambios</button>
+      <button class="b-linea" type="button" (click)="nuevaMesa()">Agregar mesa</button>
+    </div>
+
+    <app-croquis [zonas]="zonas()" [mesas]="mesasParaCroquis()" modo="acomodar"
+                 [conLeyenda]="false" (movida)="anotarMovida($event)" />
+
+    <h3 class="titulo-grupo">Las mesas</h3>
+    <div class="tabla-caja">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Mesa</th><th>Capacidad</th><th>Área</th><th>Forma</th>
+            <th>Etiquetas</th><th>Posición</th><th>Activa</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of mesas(); track m.id) {
+            <tr>
+              <td><strong>{{ m.id }}</strong></td>
+              <td>{{ m.capacidad }} personas</td>
+              <td>{{ nombreDeZona(m) }}</td>
+              <td>{{ m.forma === 'REDONDA' ? 'Redonda' : 'Cuadrada' }}</td>
+              <td class="texto-chico">{{ m.etiquetas || '—' }}</td>
+              <td class="texto-chico texto-suave">{{ m.x }} m, {{ m.y }} m</td>
+              <td>
+                <span [class]="m.activa ? 'chip chip-ok' : 'chip chip-malo'">
+                  {{ m.activa ? 'Sí' : 'Fuera de servicio' }}
+                </span>
+              </td>
+              <td class="a-la-derecha">
+                <button class="b-suave b-chico" type="button" (click)="editarMesa(m)">Editar</button>
+                <button class="b-peligro b-chico" type="button" (click)="borrarMesa(m)">Borrar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ================= Catálogos ================= -->
+  @if (pestana() === 'catalogos') {
+    <div class="filtros">
+      @for (c of catalogos; track c.clave) {
+        <button type="button" class="chip boton-chip" [class.chip-principal]="catalogo().clave === c.clave"
+                (click)="elegirCatalogo(c)">{{ c.titulo }}</button>
+      }
+    </div>
+
+    <div class="titulo-seccion">
+      <div>
+        <h2>{{ catalogo().titulo }}</h2>
+        <p class="subtitulo">{{ catalogo().descripcion }}</p>
+      </div>
+      <button class="b-principal" type="button" (click)="nuevo()">
+        Agregar {{ catalogo().singular }}
+      </button>
+    </div>
+
+    <div class="tabla-caja">
+      <table class="tabla">
+        <thead>
+          <tr>
+            @for (c of camposDeTabla; track c.nombre) { <th>{{ c.titulo }}</th> }
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of filas(); track fila['id']) {
+            <tr>
+              @for (c of camposDeTabla; track c.nombre) {
+                <td>
+                  @if (c.tipo === 'si-no') {
+                    <span [class]="fila[c.nombre] ? 'chip chip-ok' : 'chip chip-malo'">
+                      {{ mostrar(fila, c) }}
+                    </span>
+                  } @else if (c.tipo === 'color') {
+                    <span class="muestra-color" [style.background]="fila[c.nombre]"></span>
+                  } @else {
+                    {{ mostrar(fila, c) }}
+                  }
+                </td>
+              }
+              <td class="a-la-derecha">
+                <button class="b-suave b-chico" type="button" (click)="editar(fila)">Editar</button>
+                <button class="b-peligro b-chico" type="button" (click)="borrar(fila)">Borrar</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td [attr.colspan]="camposDeTabla.length + 1" class="centrado texto-suave">
+                Todavía no hay nada aquí.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ================= Reservas ================= -->
+  @if (pestana() === 'reservas') {
+    <div class="c-caja-plana barra-fechas">
+      <label class="f-campo sin-margen">
+        <span>Desde</span>
+        <input type="date" [value]="desde()" (change)="desde.set($any($event.target).value)" />
+      </label>
+      <label class="f-campo sin-margen">
+        <span>Hasta</span>
+        <input type="date" [value]="hasta()" (change)="hasta.set($any($event.target).value)" />
+      </label>
+      <button class="b-principal" type="button" (click)="cargarReservas()">Buscar</button>
+      <span class="texto-chico texto-suave">{{ reservas().length }} reservas</span>
+    </div>
+
+    <div class="tabla-caja">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Hora</th><th>Mesa</th><th>Área</th><th>Cliente</th>
+            <th>Teléfono</th><th>Pers.</th><th>Ocasión</th><th>Estado</th><th>Código</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of reservas(); track r['id']) {
+            <tr>
+              <td>{{ r['fecha'] }}</td>
+              <td>{{ r['hora'] }}</td>
+              <td><strong>{{ r['idMesa'] }}</strong></td>
+              <td>{{ r['zona'] ?? '—' }}</td>
+              <td>{{ r['cliente'] }}</td>
+              <td>{{ r['telefono'] ?? '—' }}</td>
+              <td>{{ r['personas'] }}</td>
+              <td>{{ r['ocasion'] ?? '—' }}</td>
+              <td><span class="chip">{{ r['estadoNombre'] }}</span></td>
+              <td class="texto-chico">{{ r['codigo'] ?? '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="10" class="centrado texto-suave">Sin reservas en ese rango.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ================= Números ================= -->
+  @if (pestana() === 'reportes') {
+    <div class="c-caja-plana barra-fechas">
+      <label class="f-campo sin-margen">
+        <span>Desde</span>
+        <input type="date" [value]="desde()" (change)="desde.set($any($event.target).value)" />
+      </label>
+      <label class="f-campo sin-margen">
+        <span>Hasta</span>
+        <input type="date" [value]="hasta()" (change)="hasta.set($any($event.target).value)" />
+      </label>
+      <button class="b-principal" type="button" (click)="cargarReportes()">Ver</button>
+    </div>
+
+    @if (reportes(); as r) {
+      <p class="subtitulo">Del {{ r.desde }} al {{ r.hasta }}.</p>
+
+      <div class="tarjetas-numero">
+        <div class="c-caja numero">
+          <span class="numero-grande">{{ r.reservas }}</span>
+          <span class="numero-texto">reservas</span>
+        </div>
+        <div class="c-caja numero">
+          <span class="numero-grande">{{ r.comensales }}</span>
+          <span class="numero-texto">comensales atendidos</span>
+        </div>
+        <div class="c-caja numero">
+          <span class="numero-grande">${{ r.ventaEnPedidos }}</span>
+          <span class="numero-texto">pedido por la página</span>
+        </div>
+        <div class="c-caja numero">
+          <span class="numero-grande">{{ r.porcentajeNoShow }}%</span>
+          <span class="numero-texto">no se presentaron ({{ r.noSePresentaron }})</span>
+        </div>
+        <div class="c-caja numero">
+          <span class="numero-grande">{{ r.canceladas }}</span>
+          <span class="numero-texto">canceladas</span>
+        </div>
+        <div class="c-caja numero">
+          <span class="numero-grande">{{ r.mesasActivas }}</span>
+          <span class="numero-texto">mesas en servicio</span>
+        </div>
+      </div>
+
+      <div class="rejilla-dos">
+        <div class="c-caja">
+          <h3>Reservas por día</h3>
+          <div class="barras">
+            @for (d of diasDelReporte(); track d.fecha) {
+              <div class="barra" [title]="d.fecha + ': ' + d.cuantas">
+                <div class="barra-relleno" [style.height]="alto(d.cuantas, maximoPorDia())"></div>
+                <span class="barra-pie">{{ d.fecha.slice(8, 10) }}</span>
+              </div>
+            }
+          </div>
+          <p class="f-ayuda">Cada barra es un día del rango. Pasa el puntero encima para ver la fecha y cuántas reservas hubo.</p>
+        </div>
+
+        <div class="c-caja">
+          <h3>A qué hora reservan</h3>
+          <div class="barras">
+            @for (h of horasDelReporte(); track h.hora) {
+              <div class="barra" [title]="h.hora + ': ' + h.cuantas">
+                <div class="barra-relleno dorada" [style.height]="alto(h.cuantas, h.maximo)"></div>
+                <span class="barra-pie">{{ h.hora.slice(0, 5) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="rejilla-dos">
+        <div class="c-caja">
+          <h3>Áreas más pedidas</h3>
+          @for (z of zonasDelReporte(); track z.zona) {
+            <div class="renglon-medida">
+              <span>{{ z.zona }}</span>
+              <div class="medida"><div class="medida-relleno" [style.width.%]="z.porciento"></div></div>
+              <strong>{{ z.cuantas }}</strong>
+            </div>
+          }
+        </div>
+
+        <div class="c-caja">
+          <h3>Platillos más pedidos</h3>
+          <table class="tabla">
+            <tbody>
+              @for (p of r.platillosMasPedidos; track p.platillo) {
+                <tr><td>{{ p.platillo }}</td><td class="a-la-derecha"><strong>{{ p.cantidad }}</strong></td></tr>
+              } @empty {
+                <tr><td class="texto-suave">Nadie ha pedido por la página en ese rango.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ================= Configuración ================= -->
+  @if (pestana() === 'config') {
+    <div class="rejilla-dos">
+      <div class="c-caja">
+        <h3>Cómo trabaja el restaurante</h3>
+        <p class="subtitulo">
+          Esto no está escrito en el código: se lee de la base cada vez, así que un cambio
+          aquí se ve de inmediato en la página del cliente.
+        </p>
+        <hr class="separador" />
+
+        @for (p of parametrosVisibles; track p.id) {
+          <label class="f-campo">
+            <span>{{ p.titulo }}</span>
+            @if (p.tipo === 'parrafo') {
+              <textarea [value]="valorDe(p.id)" (input)="cambiarValor(p.id, $any($event.target).value)"></textarea>
+            } @else if (p.tipo === 'numero') {
+              <input type="number" [value]="valorDe(p.id)"
+                     (input)="cambiarValor(p.id, $any($event.target).value)" />
+            } @else if (p.tipo === 'hora') {
+              <input type="time" [value]="valorDe(p.id)"
+                     (input)="cambiarValor(p.id, $any($event.target).value)" />
+            } @else {
+              <input [value]="valorDe(p.id)" (input)="cambiarValor(p.id, $any($event.target).value)" />
+            }
+            @if (p.ayuda) { <span class="f-ayuda">{{ p.ayuda }}</span> }
+          </label>
+        }
+
+        <button class="b-principal" type="button" (click)="guardarConfig()">Guardar configuración</button>
+      </div>
+
+      <div>
+        <div class="c-caja">
+          <h3>Código para que se registre el personal</h3>
+          <p class="texto-chico texto-suave">
+            Quien se registre marcando "Trabajo en el restaurante" tiene que escribir este código.
+            Si se te sale de las manos, genera uno nuevo: el anterior deja de servir.
+          </p>
+          <div class="codigo-caja">{{ codigoEmpleado() || '—' }}</div>
+          <button class="b-linea" type="button" (click)="renovarCodigo()">Generar uno nuevo</button>
+        </div>
+
+        <div class="c-caja espacio">
+          <h3>Todos los parámetros</h3>
+          <p class="texto-chico texto-suave">
+            Por si hace falta ajustar algo que no está arriba.
+          </p>
+          <div class="tabla-caja">
+            <table class="tabla">
+              <tbody>
+                @for (p of parametros(); track p.id) {
+                  <tr>
+                    <td class="texto-chico">
+                      <strong>{{ p.id }}</strong>
+                      <div class="texto-suave">{{ p.descripcion }}</div>
+                    </td>
+                    <td>
+                      <input class="f-control" [value]="valorDe(p.id)"
+                             (input)="cambiarValor(p.id, $any($event.target).value)" />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= Cuentas ================= -->
+  @if (pestana() === 'usuarios') {
+    <p class="subtitulo">
+      Aquí se le da acceso al personal y se ayuda a quien no puede entrar. No se pueden ver
+      las contraseñas de nadie: solo se puede poner una temporal.
+    </p>
+
+    @if (temporal(); as t) {
+      <div class="aviso aviso-info">
+        Contraseña temporal de <strong>{{ t.nombre }}</strong>:
+        <strong class="codigo-en-linea">{{ t.contrasena }}</strong>.
+        Dásela en persona; al entrar el sistema le pedirá cambiarla.
+        <button class="b-suave b-chico" type="button" (click)="temporal.set(null)">Entendido</button>
+      </div>
+    }
+
+    <div class="tabla-caja">
+      <table class="tabla">
+        <thead>
+          <tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Rol</th><th>Reservas</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (u of usuarios(); track u.id) {
+            <tr>
+              <td>{{ u.nombre }}</td>
+              <td class="texto-chico">{{ u.correo }}</td>
+              <td class="texto-chico">{{ u.telefono ?? '—' }}</td>
+              <td>
+                <select class="f-control chico" [value]="u.rol"
+                        (change)="cambiarRol(u, $any($event.target).value)">
+                  <option value="CLIENTE">Cliente</option>
+                  <option value="EMPLEADO">Empleado</option>
+                  <option value="ADMINISTRADOR">Administrador</option>
+                </select>
+              </td>
+              <td>{{ u.reservas }}</td>
+              <td>
+                <span [class]="u.activo ? 'chip chip-ok' : 'chip chip-malo'">
+                  {{ u.activo ? 'Activa' : 'Desactivada' }}
+                </span>
+              </td>
+              <td class="a-la-derecha">
+                @if (u.activo) {
+                  <button class="b-suave b-chico" type="button" (click)="activar(u, false)">Desactivar</button>
+                } @else {
+                  <button class="b-suave b-chico" type="button" (click)="activar(u, true)">Activar</button>
+                }
+                <button class="b-suave b-chico" type="button" (click)="reiniciar(u)">
+                  Contraseña temporal
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ================= Lista de espera ================= -->
+  @if (pestana() === 'espera') {
+    <p class="subtitulo">
+      Clientes que querían mesa y no había. Si se libera algo a esa hora, aquí están sus datos
+      para marcarles.
+    </p>
+    <div class="tabla-caja">
+      <table class="tabla">
+        <thead>
+          <tr><th>Fecha</th><th>Hora</th><th>Personas</th><th>Cliente</th><th>Teléfono</th><th>Correo</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (e of espera(); track e.id) {
+            <tr>
+              <td>{{ e.fecha }}</td>
+              <td>{{ e.hora }}</td>
+              <td>{{ e.personas }}</td>
+              <td>{{ e.cliente }}</td>
+              <td>{{ e.telefono ?? '—' }}</td>
+              <td class="texto-chico">{{ e.correo ?? '—' }}</td>
+              <td class="a-la-derecha">
+                <button class="b-suave b-chico" type="button" (click)="quitarDeEspera(e.id)">Quitar</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7" class="centrado texto-suave">Nadie en la lista de espera.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+<!-- ================= Formulario de catálogo ================= -->
+@if (enForma(); as fila) {
+  <div class="modal-fondo" (click)="enForma.set(null)">
+    <div class="modal-caja" (click)="$event.stopPropagation()">
+      <div class="modal-encabezado">
+        <h2>{{ esNuevo() ? 'Agregar' : 'Editar' }} {{ catalogo().singular }}</h2>
+        <button class="cerrar-x" type="button" (click)="enForma.set(null)" aria-label="Cerrar">✕</button>
+      </div>
+
+      @for (c of catalogo().campos; track c.nombre) {
+        <label class="f-campo">
+          <span>{{ c.titulo }}@if (c.obligatorio) { * }</span>
+
+          @if (c.tipo === 'parrafo') {
+            <textarea [value]="leer(fila, c)" (input)="cambiarEnForma(c, $any($event.target).value)"></textarea>
+          } @else if (c.tipo === 'si-no') {
+            <select [value]="leer(fila, c) ? 'si' : 'no'"
+                    (change)="cambiarEnForma(c, $any($event.target).value === 'si')">
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          } @else if (c.tipo === 'lista') {
+            <select [value]="leer(fila, c)" (change)="cambiarEnForma(c, $any($event.target).value)">
+              @for (o of c.opciones ?? []; track o.valor) {
+                <option [value]="o.valor">{{ o.texto }}</option>
+              }
+            </select>
+          } @else if (c.tipo === 'numero') {
+            <input type="number" step="0.1" [value]="leer(fila, c)"
+                   (input)="cambiarEnForma(c, $any($event.target).value)" />
+          } @else if (c.tipo === 'fecha') {
+            <input type="date" [value]="leer(fila, c)"
+                   (change)="cambiarEnForma(c, $any($event.target).value)" />
+          } @else if (c.tipo === 'color') {
+            <input type="color" [value]="leer(fila, c)"
+                   (input)="cambiarEnForma(c, $any($event.target).value)" />
+          } @else {
+            <input [value]="leer(fila, c)" (input)="cambiarEnForma(c, $any($event.target).value)" />
+          }
+
+          @if (c.ayuda) { <span class="f-ayuda">{{ c.ayuda }}</span> }
+        </label>
+      }
+
+      <hr class="separador" />
+      <div class="fila-botones">
+        <button class="b-principal" type="button" (click)="guardar()">Guardar</button>
+        <button class="b-suave" type="button" (click)="enForma.set(null)">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= Formulario de mesa ================= -->
+@if (mesaEnForma(); as mesa) {
+  <div class="modal-fondo" (click)="mesaEnForma.set(null)">
+    <div class="modal-caja" (click)="$event.stopPropagation()">
+      <div class="modal-encabezado">
+        <h2>{{ esMesaNueva() ? 'Agregar mesa' : 'Editar la mesa ' + mesa.id }}</h2>
+        <button class="cerrar-x" type="button" (click)="mesaEnForma.set(null)" aria-label="Cerrar">✕</button>
+      </div>
+
+      <label class="f-campo">
+        <span>Número de mesa *</span>
+        <input type="number" min="1" [value]="mesa.id" [disabled]="!esMesaNueva()"
+               (input)="cambiarEnMesa('id', +$any($event.target).value)" />
+        <span class="f-ayuda">Es el número que el cliente ve en el croquis. No se puede cambiar después.</span>
+      </label>
+
+      <div class="f-fila">
+        <label class="f-campo">
+          <span>Capacidad *</span>
+          <input type="number" min="1" max="20" [value]="mesa.capacidad"
+                 (input)="cambiarEnMesa('capacidad', +$any($event.target).value)" />
+        </label>
+        <label class="f-campo">
+          <span>Forma</span>
+          <select [value]="mesa.forma" (change)="cambiarEnMesa('forma', $any($event.target).value)">
+            <option value="REDONDA">Redonda</option>
+            <option value="CUADRADA">Cuadrada</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="f-campo">
+        <span>Área</span>
+        <select [value]="mesa.zona?.id ?? ''" (change)="cambiarEnMesa('zona', $any($event.target).value)">
+          <option value="">Sin área</option>
+          @for (z of zonasConMesas(); track z.id) {
+            <option [value]="z.id">{{ z.nombre }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="f-fila">
+        <label class="f-campo">
+          <span>Posición X (m)</span>
+          <input type="number" step="0.1" [value]="mesa.x"
+                 (input)="cambiarEnMesa('x', +$any($event.target).value)" />
+        </label>
+        <label class="f-campo">
+          <span>Posición Y (m)</span>
+          <input type="number" step="0.1" [value]="mesa.y"
+                 (input)="cambiarEnMesa('y', +$any($event.target).value)" />
+        </label>
+      </div>
+      <p class="f-ayuda">
+        También puedes arrastrarla en el croquis en lugar de escribir los números.
+      </p>
+
+      <label class="f-campo">
+        <span>Etiquetas</span>
+        <input [value]="mesa.etiquetas ?? ''" (input)="cambiarEnMesa('etiquetas', $any($event.target).value)" />
+        <span class="f-ayuda">Separadas por comas: ventana, accesible, tranquila…</span>
+      </label>
+
+      <label class="f-check">
+        <input type="checkbox" [checked]="mesa.activa"
+               (change)="cambiarEnMesa('activa', $any($event.target).checked)" />
+        <span>La mesa está en servicio</span>
+      </label>
+
+      <hr class="separador" />
+      <div class="fila-botones">
+        <button class="b-principal" type="button" (click)="guardarMesa()">Guardar</button>
+        <button class="b-suave" type="button" (click)="mesaEnForma.set(null)">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

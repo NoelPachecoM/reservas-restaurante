@@ -1,0 +1,374 @@
+<section class="ancho seccion">
+
+  @if (lista(); as r) {
+    <!-- ================= Paso 4: ya quedó ================= -->
+    <div class="c-caja listo">
+      <div class="listo-icono">✓</div>
+      <h1>{{ editando() ? 'Tu reserva cambió' : '¡Listo, te esperamos!' }}</h1>
+      <p class="subtitulo">
+        Mesa {{ r.idMesa }}@if (r.zona) { en {{ r.zona }} } · {{ r.fecha }} a las {{ r.hora }}
+        · {{ r.personas }} personas
+      </p>
+
+      @if (r.codigo) {
+        <div class="codigo-caja">
+          <span class="texto-chico texto-suave">Tu código de confirmación</span>
+          <strong class="codigo">{{ r.codigo }}</strong>
+          <span class="texto-chico texto-suave">Muéstralo al llegar. También te lo mandamos por correo.</span>
+        </div>
+      }
+
+      <p class="texto-chico texto-suave">
+        La mesa es tuya de {{ r.hora }} a {{ r.horaFin }}.
+        Si no puedes venir, cancélala desde "Mis reservas" con al menos
+        {{ restaurante()?.horasParaCambiar }} horas de anticipación.
+      </p>
+
+      <div class="fila-botones centrado-botones">
+        <a [routerLink]="['/reserva', r.id]" class="b-principal">Ver mi reserva</a>
+        <button class="b-suave" type="button" (click)="verMisReservas()">Mis reservas</button>
+      </div>
+    </div>
+  } @else {
+
+    <div class="titulo-seccion">
+      <div>
+        <span class="etiqueta-arriba">{{ editando() ? 'Cambiar reserva' : 'Reservar' }}</span>
+        <h1>{{ editando() ? 'Cambia tu reserva' : 'Aparta tu mesa' }}</h1>
+        <p class="subtitulo">Tú eliges exactamente dónde te quieres sentar.</p>
+      </div>
+    </div>
+
+    <!-- Los tres pasos -->
+    <ol class="pasos-barra">
+      <li [class.activo]="paso() === 1" [class.hecho]="paso() > 1">
+        <button type="button" (click)="volverA(1)">1. Cuándo y cuántos</button>
+      </li>
+      <li [class.activo]="paso() === 2" [class.hecho]="paso() > 2">
+        <button type="button" [disabled]="!hora()" (click)="volverA(2)">2. Tu mesa</button>
+      </li>
+      <li [class.activo]="paso() === 3">
+        <button type="button" [disabled]="mesa() === null" (click)="volverA(3)">3. Confirmar</button>
+      </li>
+    </ol>
+
+    @if (error()) { <div class="aviso aviso-error">{{ error() }}</div> }
+
+    <!-- ================= Paso 1 ================= -->
+    @if (paso() === 1) {
+      <div class="rejilla-paso1">
+        <div class="c-caja">
+          <h3>¿Cuántos van?</h3>
+          <div class="contador">
+            <button class="b-suave" type="button" (click)="cambiarPersonas(personas() - 1)"
+                    [disabled]="personas() <= 1" aria-label="Menos personas">−</button>
+            <span class="contador-numero">{{ personas() }}</span>
+            <button class="b-suave" type="button" (click)="cambiarPersonas(personas() + 1)"
+                    [disabled]="personas() >= 20" aria-label="Más personas">+</button>
+          </div>
+          <p class="f-ayuda">
+            Para grupos de más de 10 personas tenemos el salón privado. Si son más de 20,
+            márcanos por teléfono.
+          </p>
+
+          <hr class="separador" />
+
+          <h3>¿Qué día?</h3>
+          <div class="mes-barra">
+            <button class="b-suave b-chico" type="button" (click)="moverMes(-1)"
+                    [disabled]="!puedeMesAnterior">‹</button>
+            <strong>{{ tituloMes() }}</strong>
+            <button class="b-suave b-chico" type="button" (click)="moverMes(1)">›</button>
+          </div>
+
+          <div class="calendario">
+            @for (d of diasSemana; track d) { <span class="dia-semana">{{ d }}</span> }
+            @for (c of casillas(); track $index) {
+              @if (c.estado === 'VACIO') {
+                <span class="casilla vacia"></span>
+              } @else {
+                <button type="button" class="casilla" [class]="'d-' + c.estado.toLowerCase()"
+                        [class.hoy]="c.fecha === hoy()" [class.elegida]="c.fecha === fecha()"
+                        [disabled]="!sePuedeElegir(c)" (click)="elegirDia(c)"
+                        [title]="c.fecha">{{ c.dia }}</button>
+              }
+            }
+          </div>
+          @if (cargandoMes()) { <p class="texto-chico texto-suave">Revisando disponibilidad…</p> }
+
+          <div class="leyenda-cal">
+            <span><i class="pt d-libre"></i> Hay lugar</span>
+            <span><i class="pt d-parcial"></i> Quedan pocas mesas</span>
+            <span><i class="pt d-ocupado"></i> Lleno</span>
+            <span><i class="pt d-bloqueado"></i> Cerrado</span>
+          </div>
+        </div>
+
+        <div class="c-caja">
+          <h3>¿A qué hora?</h3>
+          <p class="texto-chico texto-suave">
+            La mesa es tuya {{ restaurante()?.duracionMin }} minutos desde la hora que elijas.
+          </p>
+
+          @if (cargandoHorarios()) {
+            <div class="cargando">Buscando horarios…</div>
+          } @else if (!hayHorarios) {
+            <div class="vacio">
+              <p>No quedan mesas ese día para {{ personas() }} personas.</p>
+              <p class="texto-chico">Prueba con otro día, o déjanos tus datos y te avisamos si se libera una.</p>
+              @if (avisoEspera()) {
+                <div class="aviso aviso-ok">{{ avisoEspera() }}</div>
+              } @else if (usuario()) {
+                <button class="b-linea b-chico" type="button" (click)="anotarmeEnEspera()">
+                  Anotarme en la lista de espera
+                </button>
+              } @else {
+                <a routerLink="/entrar" class="b-linea b-chico">Entrar para anotarme en la lista</a>
+              }
+            </div>
+          } @else {
+            <div class="horas">
+              @for (h of horarios(); track h.hora) {
+                <button type="button" class="hora" [class.elegida]="hora() === h.hora.slice(0, 5)"
+                        [disabled]="!h.disponible" [title]="h.motivo ?? (h.mesasLibres + ' mesas libres')"
+                        (click)="elegirHora(h)">
+                  <strong>{{ h.hora.slice(0, 5) }}</strong>
+                  @if (h.disponible) {
+                    <small>{{ h.mesasLibres }} mesas</small>
+                  } @else {
+                    <small>—</small>
+                  }
+                </button>
+              }
+            </div>
+          }
+
+          <hr class="separador" />
+          <button class="b-principal b-ancho" type="button" [disabled]="!hora()" (click)="irAlCroquis()">
+            {{ hora() ? 'Elegir mi mesa' : 'Primero elige la hora' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ================= Paso 2: croquis ================= -->
+    @if (paso() === 2) {
+      <div class="resumen-barra c-caja-plana">
+        <span><strong>{{ personas() }}</strong> personas</span>
+        <span><strong>{{ fecha() }}</strong></span>
+        <span>a las <strong>{{ hora() }}</strong></span>
+        <button class="b-suave b-chico" type="button" (click)="volverA(1)">Cambiar</button>
+      </div>
+
+      <div class="filtros-zona">
+        <button type="button" class="chip boton-chip" [class.chip-principal]="zonaFiltro() === null"
+                (click)="zonaFiltro.set(null)">Todo el restaurante</button>
+        @for (z of zonas(); track z.id) {
+          @if (z.reservable) {
+            <button type="button" class="chip boton-chip" [class.chip-principal]="zonaFiltro() === z.id"
+                    (click)="zonaFiltro.set(z.id)">{{ z.nombre }}</button>
+          }
+        }
+      </div>
+
+      @if (cargandoCroquis()) {
+        <div class="cargando">Dibujando el croquis…</div>
+      } @else {
+        <app-croquis [zonas]="zonas()" [mesas]="mesasVisibles()" [seleccionada]="mesa()"
+                     [personas]="personas()" modo="elegir" (elegida)="tomarMesa($event)" />
+      }
+
+      <div class="c-caja barra-abajo">
+        @if (mesaElegida(); as m) {
+          <div>
+            <strong>Mesa {{ m.id }}</strong> · {{ m.capacidad }} personas
+            @if (m.zona) { · {{ m.zona }} }
+            @if (m.etiquetas) { · {{ m.etiquetas.split(',').join(', ') }} }
+            <div class="texto-chico texto-suave">
+              Apartada para ti {{ tiempoApartado }} más. Nadie más puede tomarla mientras terminas.
+            </div>
+          </div>
+          <div class="fila-botones">
+            <button class="b-suave" type="button" (click)="soltarMesa()">Elegir otra</button>
+            <button class="b-principal" type="button" (click)="irAConfirmar()">Continuar</button>
+          </div>
+        } @else {
+          <div class="texto-suave">Toca en el croquis la mesa donde quieres sentarte.</div>
+          <button class="b-suave" type="button" (click)="volverA(1)">Regresar</button>
+        }
+      </div>
+    }
+
+    <!-- ================= Paso 3: confirmar ================= -->
+    @if (paso() === 3) {
+      <div class="rejilla-paso3">
+        <div>
+          <div class="c-caja">
+            <h3>Detalles de la reserva</h3>
+            <label class="f-campo">
+              <span>¿Celebran algo? (opcional)</span>
+              <select [value]="ocasion()" (change)="ocasion.set($any($event.target).value)">
+                <option value="">Nada en especial</option>
+                <option value="Cumpleaños">Cumpleaños</option>
+                <option value="Aniversario">Aniversario</option>
+                <option value="Comida de trabajo">Comida de trabajo</option>
+                <option value="Reunión familiar">Reunión familiar</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </label>
+            <label class="f-campo">
+              <span>Notas para el restaurante (opcional)</span>
+              <textarea [value]="notas()" (input)="notas.set($any($event.target).value)"
+                        placeholder="Alergias, silla para bebé, llegamos un poco tarde…"></textarea>
+              <span class="f-ayuda">Si alguien tiene una alergia, escríbela aquí: la cocina la ve.</span>
+            </label>
+          </div>
+
+          <div class="c-caja espacio-arriba">
+            <label class="f-check">
+              <input type="checkbox" [checked]="conPedido()"
+                     (change)="conPedido.set($any($event.target).checked)" />
+              <span>Quiero dejar mi pedido listo desde ahora</span>
+            </label>
+            <p class="f-ayuda">
+              La cocina lo prepara para que esté en la mesa poco después de que llegues.
+              Puedes cambiarlo mientras la cocina no lo haya tomado.
+            </p>
+
+            @if (conPedido()) {
+              @for (g of carta(); track g.id) {
+                <h4 class="grupo-carta">{{ g.nombre }}</h4>
+                @for (p of g.platillos; track p.id) {
+                  <div class="renglon-pedido">
+                    <div>
+                      <strong>{{ p.nombre }}</strong>
+                      <span class="precio"> ${{ p.precio }}</span>
+                      <div class="texto-chico texto-suave">{{ p.descripcion }}</div>
+                      @if (cantidadDe(p.id) > 0) {
+                        <input class="f-control nota-platillo" [value]="notasDe(p.id)"
+                               (input)="anotarNota(p.id, $any($event.target).value)"
+                               placeholder="Nota: sin cebolla, término medio…" />
+                      }
+                    </div>
+                    <div class="contador chico">
+                      <button class="b-suave b-chico" type="button" (click)="sumar(p, -1)"
+                              [disabled]="cantidadDe(p.id) === 0">−</button>
+                      <span>{{ cantidadDe(p.id) }}</span>
+                      <button class="b-suave b-chico" type="button" (click)="sumar(p, 1)">+</button>
+                    </div>
+                  </div>
+                }
+              }
+              @if (elegidos().length) {
+                <div class="aviso aviso-info">
+                  {{ elegidos().length }} platillos · total aproximado ${{ totalPedido() }}
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <aside>
+          <div class="c-caja resumen">
+            <h3>Tu reserva</h3>
+            <dl class="resumen-lista">
+              <div><dt>Día</dt><dd>{{ fecha() }}</dd></div>
+              <div><dt>Hora</dt><dd>{{ hora() }}</dd></div>
+              <div><dt>Personas</dt><dd>{{ personas() }}</dd></div>
+              <div><dt>Mesa</dt><dd>{{ mesa() }}@if (mesaElegida()?.zona) { · {{ mesaElegida()!.zona }} }</dd></div>
+            </dl>
+
+            @if (mesa() !== null && !editando()) {
+              <p class="texto-chico texto-suave">Mesa apartada {{ tiempoApartado }} más.</p>
+            }
+
+            @if (!usuario()) {
+              <hr class="separador" />
+              <div class="pestanas">
+                <button type="button" [class.activa]="modoCuenta() === 'registro'"
+                        (click)="cambiarModoCuenta('registro')">Soy nuevo</button>
+                <button type="button" [class.activa]="modoCuenta() === 'entrar'"
+                        (click)="cambiarModoCuenta('entrar')">Ya tengo cuenta</button>
+              </div>
+
+              @if (avisoCuenta()) { <div class="aviso aviso-ok">{{ avisoCuenta() }}</div> }
+
+              <!-- Registro paso 2: el código que llegó al correo -->
+              @if (modoCuenta() === 'registro' && pasoCuenta() === 'codigo') {
+                <div class="aparece">
+                  <p class="texto-chico texto-suave">
+                    Mandamos un código de 6 dígitos a <strong>{{ correo() }}</strong>.
+                    Escríbelo para terminar: tu mesa sigue apartada mientras tanto.
+                  </p>
+                  <label class="f-campo">
+                    <span>Código de verificación</span>
+                    <input class="campo-codigo" [value]="codigoCorreo()"
+                           (input)="codigoCorreo.set($any($event.target).value)"
+                           inputmode="numeric" maxlength="6" placeholder="000000"
+                           autocomplete="one-time-code" />
+                  </label>
+                  <div class="fila-botones">
+                    <button class="b-suave b-chico" type="button" (click)="reenviarCodigo()"
+                            [disabled]="guardando() || segundosParaReenviar() > 0">
+                      {{ segundosParaReenviar() > 0
+                        ? 'Reenviar en ' + segundosParaReenviar() + ' s'
+                        : 'No me llegó' }}
+                    </button>
+                    <button class="b-suave b-chico" type="button" (click)="corregirDatosDeCuenta()">
+                      Corregir mi correo
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <!-- Registro paso 1, o entrar con una cuenta que ya existe -->
+                @if (modoCuenta() === 'registro') {
+                  <label class="f-campo">
+                    <span>Tu nombre</span>
+                    <input [value]="nombre()" (input)="nombre.set($any($event.target).value)"
+                           autocomplete="name" />
+                  </label>
+                  <label class="f-campo">
+                    <span>Teléfono</span>
+                    <input appTelefono [value]="telefono()" (input)="telefono.set($any($event.target).value)" />
+                  </label>
+                }
+
+                <label class="f-campo">
+                  <span>Correo</span>
+                  <input type="email" [value]="correo()" (input)="correo.set($any($event.target).value)"
+                         autocomplete="email" />
+                </label>
+                <label class="f-campo">
+                  <span>Contraseña</span>
+                  <input type="password" [value]="contrasena()"
+                         (input)="contrasena.set($any($event.target).value)"
+                         [attr.autocomplete]="modoCuenta() === 'registro' ? 'new-password' : 'current-password'" />
+                  @if (modoCuenta() === 'registro') {
+                    <span class="f-ayuda">Mínimo 8 caracteres, con letras y números.</span>
+                  }
+                </label>
+                <p class="f-ayuda">
+                  @if (modoCuenta() === 'registro') {
+                    Te mandamos un código al correo para comprobar que es tuyo. Tu mesa no se
+                    suelta mientras lo escribes.
+                  } @else {
+                    Con tu cuenta puedes cambiar o cancelar esta reserva después.
+                  }
+                </p>
+              }
+            }
+
+            <hr class="separador" />
+            <button class="b-principal b-ancho" type="button" [disabled]="!listoParaConfirmar"
+                    (click)="confirmar()">
+              {{ textoDelBoton }}
+            </button>
+            <button class="b-suave b-ancho espacio-arriba-chico" type="button" (click)="volverA(2)">
+              Regresar al croquis
+            </button>
+          </div>
+        </aside>
+      </div>
+    }
+  }
+</section>

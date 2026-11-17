@@ -1,0 +1,161 @@
+<section class="ancho seccion">
+  @if (error()) { <div class="aviso aviso-error">{{ error() }}</div> }
+  @if (aviso()) { <div class="aviso aviso-ok">{{ aviso() }}</div> }
+  @if (cargando()) { <div class="cargando">Cargando tu reserva…</div> }
+
+  @if (reserva(); as r) {
+    <div class="titulo-seccion">
+      <div>
+        <span class="etiqueta-arriba">Reserva #{{ r.id }}</span>
+        <h1>{{ r.fecha }} · {{ r.hora }}</h1>
+        <p class="subtitulo">
+          Mesa {{ r.idMesa }}@if (r.zona) { en {{ r.zona }} } ·
+          {{ r.personas }} personas · hasta las {{ r.horaFin }}
+        </p>
+      </div>
+      <div class="fila-botones">
+        @if (r.puedeCambiar) {
+          <a [routerLink]="['/reservar', r.id]" class="b-suave">Cambiar</a>
+        }
+        <a routerLink="/mis-reservas" class="b-suave">Mis reservas</a>
+      </div>
+    </div>
+
+    <div class="rejilla">
+      <div>
+        <div class="c-caja">
+          <div class="arriba">
+            <h3>Dónde te vas a sentar</h3>
+            <span [class]="r.estado === 'CONFIRMADA' ? 'chip chip-ok' : 'chip'">{{ r.estadoNombre }}</span>
+          </div>
+          <app-croquis [zonas]="zonas()" [mesas]="mesas()" [seleccionada]="r.idMesa"
+                       modo="piso" [conLeyenda]="false" />
+          <p class="texto-chico texto-suave espacio">
+            Tu mesa está marcada en rojo. Las mesas con línea punteada son de otras reservas a esa hora.
+          </p>
+        </div>
+
+        <div class="c-caja espacio">
+          <div class="arriba">
+            <h3>Tu pedido</h3>
+            @if (sePuedePedir() && !agregando()) {
+              <button class="b-principal b-chico" type="button" (click)="abrirCarta()">
+                Agregar platillos
+              </button>
+            }
+          </div>
+
+          @if (cuenta(); as c) {
+            @if (c.pedidos.length) {
+              @for (p of c.pedidos; track p.id) {
+                <div class="pedido">
+                  <div class="pedido-arriba">
+                    <strong>Pedido #{{ p.id }}</strong>
+                    <span [class]="clasePedido(p.estado)">{{ p.estadoNombre }}</span>
+                  </div>
+                  <table class="tabla tabla-pedido">
+                    <tbody>
+                      @for (l of p.lineas; track l.id) {
+                        <tr>
+                          <td>
+                            {{ l.cantidad }} × {{ l.platillo }}
+                            @if (l.notas) { <div class="texto-chico texto-suave">“{{ l.notas }}”</div> }
+                          </td>
+                          <td class="a-la-derecha">${{ l.importe }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                  @if (p.estado === 'PENDIENTE') {
+                    <button class="b-peligro b-chico" type="button" (click)="borrarPedido(p.id)">
+                      Quitar este pedido
+                    </button>
+                  }
+                </div>
+              }
+              <div class="total-caja">
+                <span>Total de la cuenta</span>
+                <strong class="precio">${{ c.total }}</strong>
+              </div>
+              <p class="f-ayuda">
+                El pago se hace en el restaurante. Esto es solo lo que la cocina tiene anotado.
+              </p>
+            } @else {
+              <div class="vacio">
+                <p>Todavía no hay nada pedido.</p>
+                @if (sePuedePedir()) {
+                  <p class="texto-chico">
+                    Puedes dejar tu pedido desde ahora y la cocina lo prepara para tu hora.
+                  </p>
+                }
+              </div>
+            }
+          }
+
+          @if (agregando()) {
+            <hr class="separador" />
+            <h4>Elige de la carta</h4>
+            @for (g of carta(); track g.id) {
+              <h5 class="grupo">{{ g.nombre }}</h5>
+              @for (p of g.platillos; track p.id) {
+                <div class="renglon">
+                  <div>
+                    <strong>{{ p.nombre }}</strong> <span class="precio">${{ p.precio }}</span>
+                    <div class="texto-chico texto-suave">{{ p.descripcion }}</div>
+                    @if (cantidadDe(p.id) > 0) {
+                      <input class="f-control nota" [value]="notasDe(p.id)"
+                             (input)="anotarNota(p.id, $any($event.target).value)"
+                             placeholder="Nota para la cocina" />
+                    }
+                  </div>
+                  <div class="contador">
+                    <button class="b-suave b-chico" type="button" (click)="sumar(p, -1)"
+                            [disabled]="cantidadDe(p.id) === 0">−</button>
+                    <span>{{ cantidadDe(p.id) }}</span>
+                    <button class="b-suave b-chico" type="button" (click)="sumar(p, 1)">+</button>
+                  </div>
+                </div>
+              }
+            }
+            <div class="fila-botones espacio">
+              <button class="b-principal" type="button" [disabled]="!elegidos().length || pidiendo()"
+                      (click)="mandarPedido()">
+                {{ pidiendo() ? 'Mandando…' : 'Mandar a la cocina ($' + total() + ')' }}
+              </button>
+              <button class="b-suave" type="button" (click)="agregando.set(false); elegidos.set([])">
+                Cancelar
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <aside>
+        <div class="c-caja">
+          <h3>Datos de la reserva</h3>
+          <dl class="datos">
+            <div><dt>A nombre de</dt><dd>{{ r.cliente }}</dd></div>
+            <div><dt>Personas</dt><dd>{{ r.personas }}</dd></div>
+            <div><dt>Mesa</dt><dd>{{ r.idMesa }} ({{ r.capacidadMesa }} lugares)</dd></div>
+            @if (r.zona) { <div><dt>Área</dt><dd>{{ r.zona }}</dd></div> }
+            @if (r.ocasion) { <div><dt>Ocasión</dt><dd>{{ r.ocasion }}</dd></div> }
+            @if (r.codigo) { <div><dt>Código</dt><dd class="codigo">{{ r.codigo }}</dd></div> }
+            @if (r.horaLlegada) { <div><dt>Llegaron</dt><dd>{{ r.horaLlegada.slice(11, 16) }}</dd></div> }
+            @if (r.horaSalida) { <div><dt>Se fueron</dt><dd>{{ r.horaSalida.slice(11, 16) }}</dd></div> }
+          </dl>
+
+          @if (r.notas) {
+            <p class="texto-chico texto-suave nota-caja">“{{ r.notas }}”</p>
+          }
+
+          @if (r.estado === 'CONFIRMADA') {
+            <hr class="separador" />
+            <p class="texto-chico texto-suave">
+              Llega a tiempo: guardamos la mesa unos minutos y luego puede pasar a otra persona.
+            </p>
+          }
+        </div>
+      </aside>
+    </div>
+  }
+</section>

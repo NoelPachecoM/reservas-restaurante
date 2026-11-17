@@ -1,0 +1,268 @@
+<section class="ancho-angosto seccion">
+  <div class="titulo-seccion">
+    <div>
+      <span class="etiqueta-arriba">Mi cuenta</span>
+      <h1>Tus datos</h1>
+      <p class="subtitulo">
+        Aquí puedes ver lo que guardamos de ti, corregirlo o pedir que lo borremos.
+      </p>
+    </div>
+    <a routerLink="/mis-reservas" class="b-suave">Mis reservas</a>
+  </div>
+
+  @if (obligado()) {
+    <div class="aviso aviso-info">
+      Tu contraseña es temporal: cámbiala ahora por una tuya.
+    </div>
+  }
+  @if (error()) { <div class="aviso aviso-error sacude">{{ error() }}</div> }
+  @if (aviso()) { <div class="aviso aviso-ok">{{ aviso() }}</div> }
+
+  <!-- Cuando la cuenta ya se borro no hay usuario, asi que este mensaje va aparte -->
+  @if (bajaLista()) {
+    <div class="c-caja centrado aparece">
+      <div class="listo-icono">✓</div>
+      <h3>Listo</h3>
+      <p class="texto-suave">{{ bajaLista() }}</p>
+      <p class="texto-chico texto-suave">Te llevamos a la portada…</p>
+    </div>
+  }
+
+  @if (usuario(); as u) {
+    <!-- ================= Acceso y rectificación ================= -->
+    <div class="c-caja">
+      <h3>Lo que guardamos de ti</h3>
+      <p class="texto-chico texto-suave">
+        Entraste como <strong>{{ u.rolNombre }}</strong>. Cualquier cambio se confirma con tu
+        contraseña actual: así nadie puede modificar tu cuenta si dejas la sesión abierta.
+      </p>
+
+      <hr class="separador" />
+
+      <form (submit)="guardar(); $event.preventDefault()">
+        <div class="f-fila">
+          <label class="f-campo">
+            <span>Nombre</span>
+            <input [value]="nombre()" (input)="nombre.set($any($event.target).value)" autocomplete="name" />
+          </label>
+          <label class="f-campo">
+            <span>Teléfono</span>
+            <input appTelefono [value]="telefono()" (input)="telefono.set($any($event.target).value)" />
+          </label>
+        </div>
+
+        <label class="f-campo">
+          <span>Contraseña nueva (déjala vacía si no la quieres cambiar)</span>
+          <input type="password" [value]="contrasenaNueva()"
+                 (input)="contrasenaNueva.set($any($event.target).value)" autocomplete="new-password" />
+          <span class="f-ayuda">Mínimo 8 caracteres, con letras y números.</span>
+        </label>
+
+        <hr class="separador" />
+
+        <label class="f-campo">
+          <span>Tu contraseña actual (para confirmar)</span>
+          <input type="password" [value]="contrasenaActual()"
+                 (input)="contrasenaActual.set($any($event.target).value)" autocomplete="current-password" />
+        </label>
+
+        <button class="b-principal" type="submit" [disabled]="guardando() || !contrasenaActual()">
+          {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- ================= Cambiar el correo ================= -->
+    <div class="c-caja espacio">
+      <div class="arriba">
+        <div>
+          <h3>Tu correo</h3>
+          <p class="correo-actual">{{ u.correo }}</p>
+        </div>
+        @if (pasoCorreo() === 'cerrado') {
+          <button class="b-linea b-chico" type="button" (click)="abrirCambioDeCorreo()">
+            Cambiar mi correo
+          </button>
+        }
+      </div>
+
+      @if (pasoCorreo() === 'cerrado') {
+        <p class="texto-chico texto-suave">
+          Con este correo entras y te llegan tus confirmaciones. Para cambiarlo pedimos dos
+          códigos: uno al correo de ahora y otro al nuevo. Así nadie puede moverte la cuenta
+          a su correo aunque te deje la sesión abierta.
+        </p>
+      }
+
+      @if (pasoCorreo() !== 'cerrado') {
+        <!-- Los tres pasos del cambio -->
+        <ol class="pasos-tramite">
+          <li [class.activo]="pasoCorreo() === 'datos'"
+              [class.hecho]="pasoCorreo() === 'actual' || pasoCorreo() === 'nuevo'">
+            1. Tu correo nuevo
+          </li>
+          <li [class.activo]="pasoCorreo() === 'actual'" [class.hecho]="pasoCorreo() === 'nuevo'">
+            2. Código al correo de ahora
+          </li>
+          <li [class.activo]="pasoCorreo() === 'nuevo'">
+            3. Código al correo nuevo
+          </li>
+        </ol>
+
+        @if (errorCorreo()) { <div class="aviso aviso-error sacude">{{ errorCorreo() }}</div> }
+        @if (avisoCorreo()) { <div class="aviso aviso-ok">{{ avisoCorreo() }}</div> }
+
+        <!-- Paso 1 -->
+        @if (pasoCorreo() === 'datos') {
+          <div class="aparece">
+            <label class="f-campo">
+              <span>Correo nuevo</span>
+              <input type="email" [value]="correoNuevo()"
+                     (input)="correoNuevo.set($any($event.target).value)" autocomplete="email" />
+              <span class="f-ayuda">Ahí te va a llegar el segundo código, así que tiene que ser tuyo.</span>
+            </label>
+            <label class="f-campo">
+              <span>Tu contraseña actual</span>
+              <input type="password" [value]="contrasenaCorreo()"
+                     (input)="contrasenaCorreo.set($any($event.target).value)"
+                     autocomplete="current-password" />
+            </label>
+            <div class="fila-botones">
+              <button class="b-principal" type="button"
+                      [disabled]="guardando() || !correoNuevo().trim() || !contrasenaCorreo()"
+                      (click)="pedirCodigoDelCorreoActual()">
+                {{ guardando() ? 'Mandando…' : 'Mandarme el primer código' }}
+              </button>
+              <button class="b-suave" type="button" (click)="cancelarTramite('correo')">Cancelar</button>
+            </div>
+          </div>
+        }
+
+        <!-- Paso 2: código al correo actual -->
+        @if (pasoCorreo() === 'actual') {
+          <div class="aparece">
+            <p class="texto-chico texto-suave">
+              Mandamos un código a <strong>{{ u.correo }}</strong>, tu correo de ahora.
+              Es para comprobar que el cambio lo estás pidiendo tú.
+            </p>
+            <label class="f-campo">
+              <span>Código del correo de ahora</span>
+              <input class="campo-codigo" [value]="codigoCorreo()"
+                     (input)="codigoCorreo.set($any($event.target).value)"
+                     inputmode="numeric" maxlength="6" placeholder="000000" />
+            </label>
+            <div class="fila-botones">
+              <button class="b-principal" type="button"
+                      [disabled]="guardando() || codigoCorreo().trim().length < 6"
+                      (click)="confirmarCodigoDelCorreoActual()">
+                {{ guardando() ? 'Verificando…' : 'Confirmar y seguir' }}
+              </button>
+              <button class="b-suave b-chico" type="button" (click)="reenviar('correo')"
+                      [disabled]="segundosParaReenviar() > 0">
+                {{ segundosParaReenviar() > 0 ? 'Reenviar en ' + segundosParaReenviar() + ' s' : 'No me llegó' }}
+              </button>
+              <button class="b-suave b-chico" type="button" (click)="cancelarTramite('correo')">Cancelar</button>
+            </div>
+          </div>
+        }
+
+        <!-- Paso 3: código al correo nuevo -->
+        @if (pasoCorreo() === 'nuevo') {
+          <div class="aparece">
+            <p class="texto-chico texto-suave">
+              Ahora mandamos otro código a <strong>{{ correoNuevo() }}</strong>.
+              Al confirmarlo, ese pasa a ser el correo de tu cuenta.
+            </p>
+            <label class="f-campo">
+              <span>Código del correo nuevo</span>
+              <input class="campo-codigo" [value]="codigoCorreo()"
+                     (input)="codigoCorreo.set($any($event.target).value)"
+                     inputmode="numeric" maxlength="6" placeholder="000000" />
+            </label>
+            <div class="fila-botones">
+              <button class="b-principal" type="button"
+                      [disabled]="guardando() || codigoCorreo().trim().length < 6"
+                      (click)="confirmarCodigoDelCorreoNuevo()">
+                {{ guardando() ? 'Cambiando…' : 'Cambiar mi correo' }}
+              </button>
+              <button class="b-suave b-chico" type="button" (click)="reenviar('correo')"
+                      [disabled]="segundosParaReenviar() > 0">
+                {{ segundosParaReenviar() > 0 ? 'Reenviar en ' + segundosParaReenviar() + ' s' : 'No me llegó' }}
+              </button>
+              <button class="b-suave b-chico" type="button" (click)="cancelarTramite('correo')">Cancelar</button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- ================= Dar de baja ================= -->
+    <div class="c-caja zona-baja espacio">
+      <h3>Dar de baja mi cuenta</h3>
+      <p class="texto-chico texto-suave">
+        Se borran tu nombre, tu teléfono y tu correo, y se cancelan tus reservas que no han
+        pasado. El restaurante conserva el historial de consumo sin tus datos personales,
+        porque es parte de su contabilidad. Puedes volver a registrarte con el mismo correo
+        cuando quieras.
+      </p>
+      <p class="texto-chico texto-suave">
+        Para hacerlo pedimos tu contraseña <strong>y</strong> un código que te mandamos al
+        correo: así esto no pasa por un descuido ni porque alguien agarre tu sesión abierta.
+      </p>
+
+      @if (errorBaja()) { <div class="aviso aviso-error sacude">{{ errorBaja() }}</div> }
+      @if (avisoBaja()) { <div class="aviso aviso-ok">{{ avisoBaja() }}</div> }
+
+      @if (pasoBaja() === 'cerrado') {
+        <button class="b-peligro" type="button" (click)="abrirBaja()">
+          Quiero dar de baja mi cuenta
+        </button>
+      }
+
+      @if (pasoBaja() === 'contrasena') {
+        <div class="aparece">
+          <label class="f-campo">
+            <span>Escribe tu contraseña para empezar</span>
+            <input type="password" [value]="contrasenaBaja()"
+                   (input)="contrasenaBaja.set($any($event.target).value)"
+                   autocomplete="current-password" />
+          </label>
+          <div class="fila-botones">
+            <button class="b-peligro" type="button" [disabled]="guardando() || !contrasenaBaja()"
+                    (click)="pedirCodigoDeBaja()">
+              {{ guardando() ? 'Mandando…' : 'Mandarme el código' }}
+            </button>
+            <button class="b-suave" type="button" (click)="cancelarTramite('baja')">Mejor no</button>
+          </div>
+        </div>
+      }
+
+      @if (pasoBaja() === 'codigo') {
+        <div class="aparece">
+          <p class="texto-chico texto-suave">
+            Mandamos un código a <strong>{{ u.correo }}</strong>. Al confirmarlo, tu cuenta
+            se elimina y esto <strong>no se puede deshacer</strong>.
+          </p>
+          <label class="f-campo">
+            <span>Código para eliminar la cuenta</span>
+            <input class="campo-codigo" [value]="codigoBaja()"
+                   (input)="codigoBaja.set($any($event.target).value)"
+                   inputmode="numeric" maxlength="6" placeholder="000000" />
+          </label>
+          <div class="fila-botones">
+            <button class="b-peligro" type="button"
+                    [disabled]="guardando() || codigoBaja().trim().length < 6"
+                    (click)="confirmarBaja()">
+              {{ guardando() ? 'Eliminando…' : 'Sí, eliminar mi cuenta' }}
+            </button>
+            <button class="b-suave b-chico" type="button" (click)="reenviar('baja')"
+                    [disabled]="segundosParaReenviar() > 0">
+              {{ segundosParaReenviar() > 0 ? 'Reenviar en ' + segundosParaReenviar() + ' s' : 'No me llegó' }}
+            </button>
+            <button class="b-suave b-chico" type="button" (click)="cancelarTramite('baja')">Mejor no</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

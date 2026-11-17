@@ -1,0 +1,91 @@
+.espacio { margin-top: 18px; }
+
+.arriba {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.correo-actual {
+  font-family: var(--titulo);
+  font-size: 1.05rem;
+  color: var(--principal);
+  word-break: break-all;
+}
+
+/* Los pasos del trámite del correo */
+.pasos-tramite {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.pasos-tramite li {
+  flex: 1 1 170px;
+  background: var(--fondo-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-full);
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+  transition: background var(--normal) ease, color var(--normal) ease,
+              border-color var(--normal) ease;
+}
+
+.pasos-tramite li.activo {
+  background: var(--degradado);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--sombra-naranja);
+}
+
+.pasos-tramite li.hecho {
+  background: var(--verde-palido);
+  border-color: #c9e2d4;
+  color: #255340;
+}
+
+.pasos-tramite li.hecho::before {
+  content: '✓ ';
+  font-weight: 700;
+}
+
+/* El código se escribe grande y separado, como en los bancos */
+.campo-codigo {
+  font-family: var(--titulo);
+  font-size: 1.6rem;
+  letter-spacing: 0.45em;
+  text-align: center;
+  text-indent: 0.45em;
+  padding: 10px;
+  max-width: 280px;
+}
+
+.zona-baja {
+  border-color: #f3cdc9;
+  background: #fffafa;
+}
+
+.zona-baja h3 { margin-bottom: 8px; color: var(--peligro); }
+.zona-baja p { margin-bottom: 12px; }
+
+.listo-icono {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: var(--verde-palido);
+  color: var(--verde);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+  animation: zoom-suave 420ms var(--rebote) backwards;
+}

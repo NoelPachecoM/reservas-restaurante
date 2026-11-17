@@ -1,0 +1,63 @@
+.titulo-grupo {
+  margin: 26px 0 14px;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta-suave);
+}
+
+.tarjeta-arriba {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fecha-grande {
+  font-family: var(--titulo);
+  font-size: 1.15rem;
+}
+
+.datos {
+  margin: 0 0 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.datos > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.datos dt { color: var(--tinta-suave); margin: 0; }
+.datos dd { margin: 0; font-weight: 600; }
+
+.codigo { letter-spacing: 0.08em; color: var(--principal); }
+
+.tarjeta { position: relative; overflow: hidden; }
+
+/* Franja naranja arriba de la tarjeta, que se llena al pasar el puntero */
+.tarjeta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--degradado);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--lento) var(--suave);
+}
+
+.tarjeta:hover::before { transform: scaleX(1); }
+
+.nota {
+  font-style: italic;
+  margin-bottom: 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--borde);
+}

@@ -1,0 +1,196 @@
+.aviso-explica { margin-bottom: 14px; }
+
+.barra-croquis {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.titulo-grupo {
+  margin: 24px 0 12px;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--tinta-suave);
+}
+
+.filtros {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.barra-fechas {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.sin-margen { margin-bottom: 0; }
+
+.muestra-color {
+  display: inline-block;
+  width: 26px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--borde);
+}
+
+.rejilla-dos {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.espacio { margin-top: 16px; }
+
+/* ---------------- Números ---------------- */
+
+.tarjetas-numero {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin: 16px 0;
+}
+
+.numero {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 16px;
+}
+
+.numero-grande {
+  font-family: var(--titulo);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--principal);
+  line-height: 1;
+}
+
+.numero { animation: sube var(--normal) var(--suave) backwards; }
+.tarjetas-numero .numero:nth-child(2) { animation-delay: 50ms; }
+.tarjetas-numero .numero:nth-child(3) { animation-delay: 100ms; }
+.tarjetas-numero .numero:nth-child(4) { animation-delay: 150ms; }
+.tarjetas-numero .numero:nth-child(5) { animation-delay: 200ms; }
+.tarjetas-numero .numero:nth-child(6) { animation-delay: 250ms; }
+
+.numero:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sombra-m);
+}
+
+.numero-texto {
+  font-size: 0.82rem;
+  color: var(--tinta-suave);
+}
+
+.barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 150px;
+  margin: 14px 0 0;
+  overflow-x: auto;
+  padding-bottom: 18px;
+}
+
+.barra {
+  flex: 1 0 18px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.barra-relleno {
+  background: linear-gradient(180deg, #3b855f, var(--verde));
+  border-radius: 4px 4px 0 0;
+  min-height: 3px;
+  transform-origin: bottom;
+  animation: crece-barra 560ms var(--suave) backwards;
+  transition: filter var(--rapido) ease;
+}
+
+.barra-relleno.dorada { background: linear-gradient(180deg, var(--acento), #d98806); }
+
+.barra:hover .barra-relleno { filter: brightness(1.12); }
+.barra:hover .barra-pie { color: var(--principal); font-weight: 700; }
+
+/* Las barras crecen desde abajo cuando aparece el reporte */
+@keyframes crece-barra {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+.barra-pie {
+  position: absolute;
+  transition: color var(--rapido) ease;
+  bottom: -17px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.64rem;
+  color: var(--tinta-suave);
+  white-space: nowrap;
+}
+
+.renglon-medida {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 0;
+  font-size: 0.9rem;
+}
+
+.medida {
+  height: 9px;
+  background: var(--fondo-2);
+  border-radius: var(--radio-full);
+  overflow: hidden;
+}
+
+.medida-relleno {
+  height: 100%;
+  background: var(--degradado);
+  border-radius: var(--radio-full);
+  transform-origin: left;
+  animation: crece-medida 620ms var(--suave) backwards;
+}
+
+@keyframes crece-medida {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ---------------- Configuración ---------------- */
+
+.codigo-caja {
+  font-family: var(--titulo);
+  font-size: 1.4rem;
+  animation: zoom-suave var(--normal) var(--rebote) backwards;
+  letter-spacing: 0.1em;
+  background: var(--acento-palido);
+  border: 1px dashed #e8cf8f;
+  border-radius: var(--radio-m);
+  padding: 13px;
+  text-align: center;
+  margin: 12px 0;
+  color: #7a5310;
+}
+
+.codigo-en-linea { letter-spacing: 0.08em; }
+
+.f-control.chico { padding: 5px 9px; font-size: 0.85rem; }
+
+@media (max-width: 950px) {
+  .rejilla-dos { grid-template-columns: 1fr; }
+}

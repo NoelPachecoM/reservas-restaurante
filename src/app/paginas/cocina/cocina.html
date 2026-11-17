@@ -1,0 +1,70 @@
+<section class="ancho seccion">
+  <div class="titulo-seccion">
+    <div>
+      <span class="etiqueta-arriba">Cocina</span>
+      <h1>Lo que falta preparar</h1>
+      <p class="subtitulo">
+        {{ pendientes().length }} por empezar · {{ enPreparacion().length }} en preparación ·
+        se actualiza solo cada 20 segundos
+      </p>
+    </div>
+    <div class="fila-botones">
+      <a routerLink="/piso" class="b-suave">Piso</a>
+      <button class="b-suave" type="button" (click)="cargar()">Actualizar</button>
+    </div>
+  </div>
+
+  @if (error()) { <div class="aviso aviso-error">{{ error() }}</div> }
+  @if (cargando()) { <div class="cargando">Cargando…</div> }
+
+  @if (!cargando() && !pedidos().length) {
+    <div class="vacio">
+      <p>Todo al día. No hay pedidos pendientes.</p>
+    </div>
+  }
+
+  <div class="tablero escalonado">
+    @for (p of pedidos(); track p.id) {
+      <article class="ticket" [class.urgente]="minutos(p) >= 20 && p.estado === 'PENDIENTE'"
+               [class.preparando]="p.estado === 'PREPARANDO'">
+        <header>
+          <div>
+            <strong class="mesa">Mesa {{ p.idMesa }}</strong>
+            <div class="texto-chico texto-suave">{{ p.cliente }}</div>
+          </div>
+          <div class="a-la-derecha">
+            <span class="chip" [class.chip-malo]="minutos(p) >= 20">{{ minutos(p) }} min</span>
+            <div class="texto-chico texto-suave">{{ hora(p) }}</div>
+          </div>
+        </header>
+
+        <ul class="lineas">
+          @for (l of p.lineas; track l.id) {
+            <li>
+              <span class="cantidad">{{ l.cantidad }}×</span>
+              <span>
+                {{ l.platillo }}
+                @if (l.notas) { <em class="nota">{{ l.notas }}</em> }
+              </span>
+            </li>
+          }
+        </ul>
+
+        <footer>
+          @if (p.estado === 'PENDIENTE') {
+            <button class="b-principal b-chico" type="button" (click)="cambiar(p, 'PREPARANDO')">
+              Empezar
+            </button>
+          } @else {
+            <button class="b-principal b-chico" type="button" (click)="cambiar(p, 'SERVIDO')">
+              Servido
+            </button>
+          }
+          <button class="b-peligro b-chico" type="button" (click)="cambiar(p, 'CANCELADO')">
+            Cancelar
+          </button>
+        </footer>
+      </article>
+    }
+  </div>
+</section>

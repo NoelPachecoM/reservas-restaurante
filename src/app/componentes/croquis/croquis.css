@@ -1,0 +1,191 @@
+.croquis-caja {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(245, 158, 11, 0.06), transparent 55%),
+    var(--papel);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-g);
+  padding: 10px;
+  overflow: auto;
+  box-shadow: var(--sombra-s);
+  animation: zoom-suave var(--lento) var(--suave) backwards;
+}
+
+.croquis {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 72vh;
+  touch-action: manipulation;
+}
+
+.croquis.acomodando { touch-action: none; }
+
+.nombre-zona {
+  font-family: var(--titulo);
+  font-size: 13px;
+  font-weight: 700;
+  fill: #978b7b;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+/* ---------------- Mesas ---------------- */
+
+.mesa .figura {
+  fill: #ffffff;
+  stroke: #cdbda6;
+  stroke-width: 2;
+  transition: fill var(--rapido) ease, stroke var(--rapido) ease,
+              stroke-width var(--rapido) ease, filter var(--normal) ease;
+}
+
+.mesa {
+  /* El origen al centro hace que al crecer no se desplace */
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--normal) var(--rebote);
+}
+
+.mesa .numero {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--tinta);
+  text-anchor: middle;
+  pointer-events: none;
+  transition: fill var(--rapido) ease;
+}
+
+.mesa .capacidad {
+  font-size: 9.5px;
+  font-weight: 600;
+  fill: #978b7b;
+  text-anchor: middle;
+  pointer-events: none;
+  transition: fill var(--rapido) ease;
+}
+
+.mesa .quien {
+  font-size: 10px;
+  font-weight: 600;
+  fill: #8d1f19;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.mesa.se-puede { cursor: pointer; }
+
+.mesa.e-libre .figura {
+  fill: #ffffff;
+  stroke: var(--verde);
+}
+
+.mesa.se-puede:hover {
+  transform: scale(1.09);
+}
+
+.mesa.se-puede:hover .figura {
+  fill: var(--verde-palido);
+  stroke: var(--verde);
+  stroke-width: 3;
+  filter: drop-shadow(0 4px 8px rgba(47, 107, 79, 0.28));
+}
+
+.mesa.e-ocupada .figura {
+  fill: #fae3e0;
+  stroke: #cc8d84;
+  stroke-dasharray: 5 3;
+}
+
+.mesa.e-ocupada { cursor: default; }
+
+.mesa.e-apartada .figura {
+  fill: var(--acento-palido);
+  stroke: var(--acento);
+  stroke-dasharray: 4 3;
+  animation: pulso 1.6s ease-in-out infinite;
+}
+
+.mesa.e-fuera_de_servicio .figura {
+  fill: #eee9e1;
+  stroke: #bdb5a8;
+}
+
+.mesa.e-fuera_de_servicio .numero,
+.mesa.e-fuera_de_servicio .capacidad { fill: #a79e90; }
+
+/* La mesa elegida: naranja de la casa */
+.mesa.e-propia .figura,
+.mesa.marcada .figura {
+  fill: var(--principal);
+  stroke: var(--principal-hondo);
+  stroke-width: 3;
+  filter: drop-shadow(0 5px 10px rgba(194, 65, 12, 0.35));
+}
+
+.mesa.marcada, .mesa.e-propia { animation: late 420ms var(--rebote); }
+
+.mesa.marcada .numero,
+.mesa.marcada .capacidad,
+.mesa.e-propia .numero,
+.mesa.e-propia .capacidad { fill: #fff; }
+
+.mesa.chica .figura {
+  fill: #f7f3ec;
+  stroke: #dad1c2;
+}
+
+.mesa.chica .numero, .mesa.chica .capacidad { fill: #bbb2a3; }
+.mesa.chica { cursor: not-allowed; }
+.mesa.chica:hover { transform: none; }
+
+.mesa:focus { outline: none; }
+
+.mesa:focus-visible .figura {
+  stroke: var(--principal);
+  stroke-width: 4;
+}
+
+.acomodando .mesa { cursor: grab; }
+.acomodando .mesa:hover { transform: scale(1.05); }
+.acomodando .mesa.moviendo { cursor: grabbing; }
+
+.acomodando .mesa.moviendo .figura {
+  fill: var(--principal-palido);
+  stroke: var(--principal);
+  stroke-width: 3;
+  filter: drop-shadow(0 8px 14px rgba(194, 65, 12, 0.3));
+}
+
+/* ---------------- Leyenda ---------------- */
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: var(--tinta-suave);
+  animation: aparece var(--lento) ease backwards;
+  animation-delay: 160ms;
+}
+
+.leyenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.muestra {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid;
+}
+
+.m-libre { background: #fff; border-color: var(--verde); }
+.m-marcada { background: var(--principal); border-color: var(--principal-hondo); }
+.m-ocupada { background: #fae3e0; border-color: #cc8d84; }
+.m-apartada { background: var(--acento-palido); border-color: var(--acento); }
+.m-fuera { background: #eee9e1; border-color: #bdb5a8; }
+.m-chica { background: #f7f3ec; border-color: #dad1c2; }

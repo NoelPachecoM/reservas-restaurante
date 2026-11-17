@@ -1,0 +1,132 @@
+@if (error()) {
+  <div class="ancho seccion"><div class="aviso aviso-error">{{ error() }}</div></div>
+}
+
+@if (restaurante(); as r) {
+  <!-- Portada -->
+  <section class="portada">
+    <div class="ancho portada-dentro">
+      <div class="portada-texto">
+        <span class="etiqueta-arriba">{{ r.frase }}</span>
+        <h1>{{ r.nombre }}</h1>
+        <p class="portada-descripcion">{{ r.descripcion }}</p>
+
+        <div class="fila-botones portada-botones">
+          <a routerLink="/reservar" class="b-principal">Reservar mesa</a>
+          <a routerLink="/carta" class="b-linea">Ver la carta</a>
+        </div>
+
+        <div class="datos-rapidos">
+          <span class="chip">Abrimos de {{ r.horaApertura }} a {{ r.horaCierre }}</span>
+          <span class="chip">La mesa es tuya {{ r.duracionMin }} min</span>
+          @if (r.telefono) { <span class="chip">Tel. {{ r.telefono }}</span> }
+        </div>
+
+        @if (r.direccion) {
+          <p class="texto-chico texto-suave direccion">{{ r.direccion }}</p>
+        }
+      </div>
+
+      <div class="portada-tarjeta c-caja">
+        <h3>Elige tú dónde te sientas</h3>
+        <p class="texto-chico texto-suave">
+          No pedimos "una mesa para cuatro". Te mostramos el croquis del restaurante con las mesas
+          libres a la hora que quieras y tú tocas la que más te guste: la de la ventana, la de la
+          terraza o la del salón privado.
+        </p>
+        <ol class="pasos">
+          <li>Dinos el día, la hora y cuántos van.</li>
+          <li>Toca tu mesa en el croquis.</li>
+          <li>Si quieres, deja tu pedido listo para que llegue antes.</li>
+        </ol>
+        <a routerLink="/reservar" class="b-principal b-ancho">Empezar</a>
+      </div>
+    </div>
+  </section>
+
+  @if (fotos.length) {
+    <section class="ancho fotos">
+      @for (f of fotos; track f) {
+        <img [src]="f" alt="" loading="lazy" />
+      }
+    </section>
+  }
+
+  <!-- Áreas -->
+  <section class="ancho seccion">
+    <div class="titulo-seccion">
+      <div>
+        <h2>Nuestras áreas</h2>
+        <p class="subtitulo">Cada una tiene su ambiente. Puedes pedir la que quieras al reservar.</p>
+      </div>
+    </div>
+    <div class="c-rejilla escalonado">
+      @for (z of zonas(); track z.id) {
+        <article class="c-caja zona">
+          <h3>{{ z.nombre }}</h3>
+          <p class="texto-chico texto-suave">{{ z.descripcion }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <!-- Carta -->
+  <section class="ancho seccion">
+    <div class="titulo-seccion">
+      <div>
+        <h2>De la carta</h2>
+        <p class="subtitulo">Una probadita. La carta completa cambia con la temporada.</p>
+      </div>
+      <a routerLink="/carta" class="b-suave b-chico">Ver todo</a>
+    </div>
+
+    @for (g of destacados(); track g.id) {
+      <h3 class="grupo-titulo">{{ g.nombre }}</h3>
+      <div class="c-rejilla escalonado">
+        @for (p of g.platillos; track p.id) {
+          <article class="c-caja platillo">
+            <div class="platillo-arriba">
+              <h4>{{ p.nombre }}</h4>
+              <span class="precio">${{ p.precio }}</span>
+            </div>
+            <p class="texto-chico texto-suave">{{ p.descripcion }}</p>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Consultar con el código -->
+  <section class="ancho seccion">
+    <div class="c-caja buscador">
+      <div>
+        <h3>¿Ya reservaste?</h3>
+        <p class="texto-chico texto-suave">
+          Escribe el código que te llegó por correo (por ejemplo R-AB12CD) para ver tu reserva
+          sin iniciar sesión.
+        </p>
+      </div>
+      <form class="buscador-forma" (submit)="buscar(); $event.preventDefault()">
+        <input class="f-control" [value]="codigo()" (input)="codigo.set($any($event.target).value)"
+               placeholder="R-XXXXXX" aria-label="Código de confirmación" />
+        <button class="b-principal" type="submit" [disabled]="buscando()">
+          {{ buscando() ? 'Buscando…' : 'Buscar' }}
+        </button>
+      </form>
+
+      @if (errorCodigo()) {
+        <div class="aviso aviso-error">{{ errorCodigo() }}</div>
+      }
+      @if (encontrada(); as res) {
+        <div class="aviso aviso-ok">
+          <strong>{{ res['estadoNombre'] }}</strong> ·
+          {{ res['fecha'] }} a las {{ res['hora'] }} ·
+          mesa {{ res['idMesa'] }}@if (res['zona']) { ({{ res['zona'] }}) } ·
+          {{ res['personas'] }} personas · a nombre de {{ res['cliente'] }}
+        </div>
+      }
+    </div>
+  </section>
+} @else if (!error()) {
+  <div class="cargando">Cargando…</div>
+}

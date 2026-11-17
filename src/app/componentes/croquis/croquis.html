@@ -1,0 +1,56 @@
+<div class="croquis-caja">
+  <svg #dibujo class="croquis" [attr.viewBox]="cajaDeVista()" [class.acomodando]="modo() === 'acomodar'"
+       preserveAspectRatio="xMidYMid meet" role="img" aria-label="Croquis del restaurante"
+       (pointermove)="moverArrastre($event)" (pointerup)="terminarArrastre()"
+       (pointerleave)="terminarArrastre()">
+
+    <!-- Zonas: el fondo del plano -->
+    @for (z of zonas(); track z.id) {
+      <g>
+        <rect [attr.x]="px(z.x)" [attr.y]="px(z.y)"
+              [attr.width]="escalar(z.ancho)" [attr.height]="escalar(z.alto)"
+              [attr.fill]="z.color" rx="10"
+              [attr.stroke]="z.tipo === 'SERVICIO' ? '#cfc7ba' : '#ddd1be'"
+              [attr.stroke-dasharray]="z.tipo === 'SERVICIO' ? '6 5' : ''" stroke-width="1.5" />
+        <text [attr.x]="px(z.x) + 12" [attr.y]="px(z.y) + 22" class="nombre-zona">{{ z.nombre }}</text>
+      </g>
+    }
+
+    <!-- Mesas -->
+    @for (m of mesas(); track m.id) {
+      <g [class]="clase(m)" [attr.tabindex]="disponible(m) ? 0 : -1" role="button"
+         [attr.aria-label]="ayuda(m)"
+         (click)="tocar(m)" (keydown)="tecla($event, m)"
+         (pointerdown)="empezarArrastre($event, m)">
+        <title>{{ ayuda(m) }}</title>
+
+        @if (m.forma === 'CUADRADA') {
+          <rect [attr.x]="px(m.x) - radio(m)" [attr.y]="px(m.y) - radio(m)"
+                [attr.width]="radio(m) * 2" [attr.height]="radio(m) * 2" rx="7" class="figura" />
+        } @else {
+          <circle [attr.cx]="px(m.x)" [attr.cy]="px(m.y)" [attr.r]="radio(m)" class="figura" />
+        }
+
+        <text [attr.x]="px(m.x)" [attr.y]="px(m.y) - 1" class="numero">{{ m.id }}</text>
+        <text [attr.x]="px(m.x)" [attr.y]="px(m.y) + 13" class="capacidad">{{ m.capacidad }}p</text>
+
+        @if (modo() === 'piso' && m.ocupadaPor) {
+          <text [attr.x]="px(m.x)" [attr.y]="px(m.y) + radio(m) + 14" class="quien">{{ m.ocupadaPor }}</text>
+        }
+      </g>
+    }
+  </svg>
+</div>
+
+@if (conLeyenda()) {
+  <div class="leyenda">
+    <span><i class="muestra m-libre"></i> Libre</span>
+    <span><i class="muestra m-marcada"></i> Tu mesa</span>
+    <span><i class="muestra m-ocupada"></i> Reservada</span>
+    <span><i class="muestra m-apartada"></i> Alguien la está apartando</span>
+    <span><i class="muestra m-fuera"></i> Fuera de servicio</span>
+    @if (personas() > 0) {
+      <span><i class="muestra m-chica"></i> No alcanza para {{ personas() }}</span>
+    }
+  </div>
+}

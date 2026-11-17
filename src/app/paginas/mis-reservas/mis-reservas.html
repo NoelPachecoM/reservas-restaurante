@@ -1,0 +1,103 @@
+<section class="ancho seccion">
+  <div class="titulo-seccion">
+    <div>
+      <span class="etiqueta-arriba">Mis reservas</span>
+      <h1>Tus mesas</h1>
+    </div>
+    <a routerLink="/reservar" class="b-principal">Reservar otra</a>
+  </div>
+
+  @if (error()) { <div class="aviso aviso-error">{{ error() }}</div> }
+  @if (aviso()) { <div class="aviso aviso-ok">{{ aviso() }}</div> }
+  @if (cargando()) { <div class="cargando">Cargando…</div> }
+
+  @if (!cargando()) {
+    <h2 class="titulo-grupo">Lo que viene</h2>
+    @if (proximas().length) {
+      <div class="c-rejilla escalonado">
+        @for (r of proximas(); track r.id) {
+          <article class="c-caja tarjeta">
+            <div class="tarjeta-arriba">
+              <div>
+                <strong class="fecha-grande">{{ r.fecha }}</strong>
+                <div class="texto-suave">{{ r.hora }} a {{ r.horaFin }}</div>
+              </div>
+              <span [class]="claseEstado(r)">{{ r.estadoNombre }}</span>
+            </div>
+
+            <dl class="datos">
+              <div><dt>Mesa</dt><dd>{{ r.idMesa }}@if (r.zona) { · {{ r.zona }} }</dd></div>
+              <div><dt>Personas</dt><dd>{{ r.personas }}</dd></div>
+              @if (r.ocasion) { <div><dt>Ocasión</dt><dd>{{ r.ocasion }}</dd></div> }
+              @if (r.codigo) { <div><dt>Código</dt><dd class="codigo">{{ r.codigo }}</dd></div> }
+            </dl>
+
+            @if (r.notas) { <p class="texto-chico texto-suave nota">“{{ r.notas }}”</p> }
+
+            <div class="fila-botones">
+              <a [routerLink]="['/reserva', r.id]" class="b-suave b-chico">Ver y pedir</a>
+              @if (r.puedeCambiar) {
+                <a [routerLink]="['/reservar', r.id]" class="b-suave b-chico">Cambiar</a>
+                <button class="b-peligro b-chico" type="button" (click)="porCancelar.set(r)">Cancelar</button>
+              } @else {
+                <span class="texto-chico texto-suave">Ya no se puede cambiar desde aquí</span>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <div class="vacio">
+        <p>No tienes reservas próximas.</p>
+        <a routerLink="/reservar" class="b-principal b-chico">Reservar una mesa</a>
+      </div>
+    }
+
+    @if (pasadas().length) {
+      <h2 class="titulo-grupo">Historial</h2>
+      <div class="tabla-caja">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Fecha</th><th>Hora</th><th>Mesa</th><th>Personas</th><th>Estado</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of pasadas(); track r.id) {
+              <tr>
+                <td>{{ r.fecha }}</td>
+                <td>{{ r.hora }}</td>
+                <td>{{ r.idMesa }}</td>
+                <td>{{ r.personas }}</td>
+                <td><span [class]="claseEstado(r)">{{ r.estadoNombre }}</span></td>
+                <td class="a-la-derecha">
+                  <a [routerLink]="['/reserva', r.id]" class="b-suave b-chico">Ver</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>
+
+@if (porCancelar(); as r) {
+  <div class="modal-fondo" (click)="porCancelar.set(null)">
+    <div class="modal-caja" (click)="$event.stopPropagation()">
+      <div class="modal-encabezado">
+        <h2>¿Cancelar la reserva?</h2>
+        <button class="cerrar-x" type="button" (click)="porCancelar.set(null)" aria-label="Cerrar">✕</button>
+      </div>
+      <p>
+        Tu mesa {{ r.idMesa }} del {{ r.fecha }} a las {{ r.hora }} queda libre para otra persona.
+        Esto no se puede deshacer, pero puedes volver a reservar si cambias de opinión.
+      </p>
+      <hr class="separador" />
+      <div class="fila-botones">
+        <button class="b-peligro" type="button" (click)="cancelar()">Sí, cancelar</button>
+        <button class="b-suave" type="button" (click)="porCancelar.set(null)">No, dejarla</button>
+      </div>
+    </div>
+  </div>
+}

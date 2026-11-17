@@ -1,0 +1,253 @@
+<section class="ancho seccion">
+  <div class="titulo-seccion">
+    <div>
+      <span class="etiqueta-arriba">Vista de piso</span>
+      <h1>El restaurante ahora</h1>
+      <p class="subtitulo">
+        {{ enMesa().length }} {{ enMesa().length === 1 ? 'mesa ocupada' : 'mesas ocupadas' }} ·
+        {{ comensalesAhora() }} {{ comensalesAhora() === 1 ? 'comensal' : 'comensales' }} ·
+        {{ pendientes().length }}
+        {{ pendientes().length === 1 ? 'reserva por llegar' : 'reservas por llegar' }}
+        @if (retrasados().length) { · <strong>{{ retrasados().length }} con retraso</strong> }
+      </p>
+    </div>
+    <div class="fila-botones">
+      <a routerLink="/cocina" class="b-suave">Cocina</a>
+      <button class="b-suave" type="button" (click)="recargar()">Actualizar</button>
+    </div>
+  </div>
+
+  @if (error()) { <div class="aviso aviso-error">{{ error() }}</div> }
+  @if (aviso()) { <div class="aviso aviso-ok">{{ aviso() }}</div> }
+
+  <div class="barra-momento c-caja-plana">
+    <label class="f-campo sin-margen">
+      <span>Día</span>
+      <input type="date" [value]="fecha()" (change)="fecha.set($any($event.target).value); cambiarMomento()" />
+    </label>
+    <label class="f-campo sin-margen">
+      <span>Franja</span>
+      <select [value]="hora()" (change)="hora.set($any($event.target).value); cambiarMomento()">
+        @for (f of restaurante()?.franjas ?? []; track f) {
+          <option [value]="f.slice(0, 5)">{{ f.slice(0, 5) }}</option>
+        }
+      </select>
+    </label>
+    <form class="buscar" (submit)="buscar(); $event.preventDefault()">
+      <label class="f-campo sin-margen">
+        <span>Buscar por código</span>
+        <input [value]="codigo()" (input)="codigo.set($any($event.target).value)" placeholder="R-XXXXXX" />
+      </label>
+      <button class="b-suave" type="submit">Buscar</button>
+    </form>
+  </div>
+
+  @if (cargando()) { <div class="cargando">Cargando el piso…</div> }
+
+  <div class="rejilla">
+    <div>
+      @if (moviendo()) {
+        <div class="aviso aviso-info">
+          Toca en el croquis la mesa a la que va a pasar <strong>{{ elegida()?.cliente }}</strong>.
+          <button class="b-suave b-chico" type="button" (click)="moviendo.set(false)">Cancelar</button>
+        </div>
+      }
+      <!-- Al mover de mesa se apagan las que no alcanzan para ese grupo -->
+      <app-croquis [zonas]="zonas()" [mesas]="mesas()" [seleccionada]="elegida()?.idMesa ?? nuevaEnMesa()?.id ?? null"
+                   [personas]="moviendo() ? (elegida()?.personas ?? 0) : 0"
+                   modo="piso" (elegida)="tocarMesa($event)" />
+
+      <h3 class="titulo-grupo">Agenda del día</h3>
+      <div class="tabla-caja">
+        <table class="tabla">
+          <thead>
+            <tr><th>Hora</th><th>Mesa</th><th>Cliente</th><th>Pers.</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (r of agenda(); track r.id) {
+              <tr [class.renglon-tarde]="r.tarde">
+                <td>{{ r.hora }}</td>
+                <td><strong>{{ r.idMesa }}</strong></td>
+                <td>
+                  {{ r.cliente }}
+                  @if (r.ocasion) { <span class="chip">{{ r.ocasion }}</span> }
+                  @if (r.notas) { <div class="texto-chico texto-suave">“{{ r.notas }}”</div> }
+                </td>
+                <td>{{ r.personas }}</td>
+                <td><span [class]="claseEstado(r)">{{ r.tarde ? 'Con retraso' : r.estadoNombre }}</span></td>
+                <td class="a-la-derecha">
+                  <button class="b-suave b-chico" type="button" (click)="abrir(r)">Abrir</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="centrado texto-suave">No hay reservas ese día.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside>
+      @if (elegida(); as r) {
+        <div class="c-caja panel">
+          <div class="modal-encabezado">
+            <div>
+              <h3>Mesa {{ r.idMesa }}</h3>
+              <span [class]="claseEstado(r)">{{ r.estadoNombre }}</span>
+            </div>
+            <button class="cerrar-x" type="button" (click)="cerrarPanel()" aria-label="Cerrar">✕</button>
+          </div>
+
+          <dl class="datos">
+            <div><dt>Cliente</dt><dd>{{ r.cliente }}</dd></div>
+            @if (r.telefono) { <div><dt>Teléfono</dt><dd>{{ r.telefono }}</dd></div> }
+            <div><dt>Hora</dt><dd>{{ r.hora }} – {{ r.horaFin }}</dd></div>
+            <div><dt>Personas</dt><dd>{{ r.personas }}</dd></div>
+            @if (r.ocasion) { <div><dt>Ocasión</dt><dd>{{ r.ocasion }}</dd></div> }
+            @if (r.codigo) { <div><dt>Código</dt><dd>{{ r.codigo }}</dd></div> }
+            @if (r.horaLlegada) { <div><dt>Llegó</dt><dd>{{ r.horaLlegada.slice(11, 16) }}</dd></div> }
+          </dl>
+
+          @if (r.notas) { <p class="texto-chico nota">“{{ r.notas }}”</p> }
+
+          <hr class="separador" />
+          <div class="fila-botones">
+            @if (r.estado === 'CONFIRMADA') {
+              <button class="b-principal b-chico" type="button" (click)="cambiarEstado('EN_MESA')">
+                Ya llegaron
+              </button>
+              <button class="b-peligro b-chico" type="button" (click)="cambiarEstado('NO_SE_PRESENTO')">
+                No se presentó
+              </button>
+            }
+            @if (r.estado === 'EN_MESA') {
+              <button class="b-principal b-chico" type="button" (click)="cambiarEstado('FINALIZADA')">
+                Liberar la mesa
+              </button>
+            }
+            @if (r.estado === 'CONFIRMADA' || r.estado === 'EN_MESA') {
+              <button class="b-suave b-chico" type="button" (click)="moviendo.set(true)">Mover de mesa</button>
+              @if (!pidiendo()) {
+                <button class="b-suave b-chico" type="button" (click)="abrirCarta()">Levantar pedido</button>
+              }
+            }
+          </div>
+
+          @if (cuenta(); as c) {
+            @if (c.pedidos.length) {
+              <hr class="separador" />
+              <h4>Pedidos</h4>
+              @for (p of c.pedidos; track p.id) {
+                <div class="pedido">
+                  <div class="pedido-arriba">
+                    <strong>#{{ p.id }}</strong>
+                    <span class="chip">{{ p.estadoNombre }}</span>
+                  </div>
+                  @for (l of p.lineas; track l.id) {
+                    <div class="linea">
+                      <span>{{ l.cantidad }} × {{ l.platillo }}</span>
+                      <span>${{ l.importe }}</span>
+                    </div>
+                    @if (l.notas) { <div class="texto-chico texto-suave">“{{ l.notas }}”</div> }
+                  }
+                </div>
+              }
+              <div class="total-caja">
+                <span>Cuenta</span><strong class="precio">${{ c.total }}</strong>
+              </div>
+            }
+          }
+
+          @if (pidiendo()) {
+            <hr class="separador" />
+            <h4>Levantar pedido</h4>
+            <div class="carta-corta">
+              @for (g of carta(); track g.id) {
+                <h5 class="grupo">{{ g.nombre }}</h5>
+                @for (p of g.platillos; track p.id) {
+                  <div class="renglon-pedido">
+                    <div>
+                      <span>{{ p.nombre }}</span> <span class="precio">${{ p.precio }}</span>
+                      @if (cantidadDe(p.id) > 0) {
+                        <input class="f-control nota-platillo" [value]="notasDe(p.id)"
+                               (input)="anotarNota(p.id, $any($event.target).value)"
+                               placeholder="Nota para la cocina" />
+                      }
+                    </div>
+                    <div class="contador">
+                      <button class="b-suave b-chico" type="button" (click)="sumar(p, -1)"
+                              [disabled]="cantidadDe(p.id) === 0">−</button>
+                      <span>{{ cantidadDe(p.id) }}</span>
+                      <button class="b-suave b-chico" type="button" (click)="sumar(p, 1)">+</button>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+            <div class="fila-botones">
+              <button class="b-principal b-chico" type="button" [disabled]="!elegidos().length"
+                      (click)="mandarPedido()">Mandar (${{ total() }})</button>
+              <button class="b-suave b-chico" type="button"
+                      (click)="pidiendo.set(false); elegidos.set([])">Cancelar</button>
+            </div>
+          }
+        </div>
+      } @else if (nuevaEnMesa(); as m) {
+        <div class="c-caja panel">
+          <div class="modal-encabezado">
+            <div>
+              <h3>Mesa {{ m.id }} libre</h3>
+              <p class="texto-chico texto-suave">{{ m.capacidad }} lugares@if (m.zona) { · {{ m.zona }} }</p>
+            </div>
+            <button class="cerrar-x" type="button" (click)="nuevaEnMesa.set(null)" aria-label="Cerrar">✕</button>
+          </div>
+
+          <p class="texto-chico texto-suave">
+            Para alguien que llegó sin reservar o que llamó por teléfono.
+          </p>
+
+          <label class="f-campo">
+            <span>Nombre</span>
+            <input [value]="nombre()" (input)="nombre.set($any($event.target).value)" />
+          </label>
+          <label class="f-campo">
+            <span>Teléfono (opcional)</span>
+            <input appTelefono [value]="telefono()" (input)="telefono.set($any($event.target).value)" />
+          </label>
+          <label class="f-campo">
+            <span>Personas</span>
+            <input type="number" min="1" [max]="m.capacidad" [value]="personas()"
+                   (input)="personas.set(+$any($event.target).value)" />
+            <span class="f-ayuda">En esta mesa caben {{ m.capacidad }}.</span>
+          </label>
+
+          <button class="b-principal b-ancho" type="button"
+                  [disabled]="guardando() || nombre().trim().length < 3" (click)="guardarNueva()">
+            {{ guardando() ? 'Guardando…' : 'Sentar en esta mesa' }}
+          </button>
+        </div>
+      } @else {
+        <div class="c-caja panel">
+          <h3>Toca una mesa</h3>
+          <p class="texto-chico texto-suave">
+            Las mesas con línea punteada tienen reserva a esa hora: tócalas para marcar la llegada,
+            levantar el pedido o liberar la mesa. Las mesas libres sirven para sentar a alguien
+            que llegó sin reservar.
+          </p>
+          @if (retrasados().length) {
+            <hr class="separador" />
+            <h4>Con retraso</h4>
+            @for (r of retrasados(); track r.id) {
+              <button class="renglon-retraso" type="button" (click)="abrir(r)">
+                <strong>Mesa {{ r.idMesa }}</strong> · {{ r.hora }} · {{ r.cliente }}
+              </button>
+            }
+            <p class="f-ayuda">
+              Pasaron más de {{ restaurante()?.toleranciaMin }} minutos de la hora reservada.
+            </p>
+          }
+        </div>
+      }
+    </aside>
+  </div>
+</section>

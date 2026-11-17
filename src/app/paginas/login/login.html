@@ -1,0 +1,147 @@
+<section class="ancho-angosto seccion">
+  <div class="c-caja aparece">
+    <div class="pestanas">
+      <button type="button" [class.activa]="modo() === 'entrar'" (click)="cambiarModo('entrar')">
+        Entrar
+      </button>
+      <button type="button" [class.activa]="modo() === 'registro'" (click)="cambiarModo('registro')">
+        Crear cuenta
+      </button>
+    </div>
+
+    @if (error()) { <div class="aviso aviso-error sacude">{{ error() }}</div> }
+    @if (aviso()) { <div class="aviso aviso-ok">{{ aviso() }}</div> }
+
+    <!-- ================= Entrar ================= -->
+    @if (modo() === 'entrar') {
+      <div class="aparece">
+        <h1>Entra a tu cuenta</h1>
+        <p class="subtitulo">Para ver, cambiar o cancelar tus reservas.</p>
+
+        <form (submit)="entrar(); $event.preventDefault()" class="espacio">
+          <label class="f-campo">
+            <span>Correo</span>
+            <input type="email" [value]="correo()" (input)="correo.set($any($event.target).value)"
+                   autocomplete="email" required />
+          </label>
+          <label class="f-campo">
+            <span>Contraseña</span>
+            <input type="password" [value]="contrasena()" (input)="contrasena.set($any($event.target).value)"
+                   autocomplete="current-password" required />
+          </label>
+          <button class="b-principal b-ancho" type="submit" [disabled]="!listoParaEntrar">
+            {{ trabajando() ? 'Un momento…' : 'Entrar' }}
+          </button>
+        </form>
+
+        <p class="texto-chico centrado espacio">
+          <a routerLink="/recuperar">Olvidé mi contraseña</a>
+        </p>
+      </div>
+    }
+
+    <!-- ================= Registro: paso 1, los datos ================= -->
+    @if (modo() === 'registro' && paso() === 'datos') {
+      <div class="aparece">
+        <h1>Crea tu cuenta</h1>
+        <p class="subtitulo">
+          Te vamos a mandar un código al correo para comprobar que es tuyo. La cuenta se
+          crea hasta que lo escribas.
+        </p>
+
+        <form (submit)="pedirCodigo(); $event.preventDefault()" class="espacio">
+          <label class="f-campo">
+            <span>Tu nombre</span>
+            <input [value]="nombre()" (input)="nombre.set($any($event.target).value)"
+                   autocomplete="name" required />
+          </label>
+          <label class="f-campo">
+            <span>Teléfono</span>
+            <input appTelefono [value]="telefono()" (input)="telefono.set($any($event.target).value)" required />
+            <span class="f-ayuda">Solo números, 10 dígitos. Por si tenemos que avisarte algo de tu mesa.</span>
+          </label>
+          <label class="f-campo">
+            <span>Correo</span>
+            <input type="email" [value]="correo()" (input)="correo.set($any($event.target).value)"
+                   autocomplete="email" required />
+            <span class="f-ayuda">Ahí te llega el código, y después tus confirmaciones.</span>
+          </label>
+          <label class="f-campo">
+            <span>Contraseña</span>
+            <input type="password" [value]="contrasena()" (input)="contrasena.set($any($event.target).value)"
+                   autocomplete="new-password" required />
+            <span class="f-ayuda">Mínimo 8 caracteres, con letras y números.</span>
+          </label>
+
+          <label class="f-check">
+            <input type="checkbox" [checked]="comoEmpleado()"
+                   (change)="comoEmpleado.set($any($event.target).checked)" />
+            <span>Trabajo en el restaurante</span>
+          </label>
+          @if (comoEmpleado()) {
+            <label class="f-campo aparece">
+              <span>Código de empleado</span>
+              <input [value]="codigoEmpleado()" (input)="codigoEmpleado.set($any($event.target).value)"
+                     placeholder="EMP-XXXXXX" />
+              <span class="f-ayuda">Lo da el administrador. Sin él la cuenta se crea como cliente.</span>
+            </label>
+          }
+
+          <button class="b-principal b-ancho" type="submit" [disabled]="!listoParaPedirCodigo">
+            {{ trabajando() ? 'Mandando el código…' : 'Mandarme el código' }}
+          </button>
+        </form>
+      </div>
+    }
+
+    <!-- ================= Registro: paso 2, el código ================= -->
+    @if (modo() === 'registro' && paso() === 'codigo') {
+      <div class="aparece">
+        <div class="sobre-animado" aria-hidden="true">✉</div>
+        <h1>Revisa tu correo</h1>
+        <p class="subtitulo">
+          Mandamos un código de 6 dígitos a <strong>{{ correo() }}</strong>.
+          Vence en 20 minutos.
+        </p>
+
+        <form (submit)="confirmar(); $event.preventDefault()" class="espacio">
+          <label class="f-campo">
+            <span>Código de verificación</span>
+            <input class="campo-codigo" [value]="codigo()" (input)="codigo.set($any($event.target).value)"
+                   inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code"
+                   required />
+          </label>
+
+          <button class="b-principal b-ancho" type="submit"
+                  [disabled]="trabajando() || codigo().trim().length < 6">
+            {{ trabajando() ? 'Verificando…' : 'Crear mi cuenta' }}
+          </button>
+        </form>
+
+        <div class="fila-botones centrar espacio">
+          <button class="b-suave b-chico" type="button" (click)="reenviar()"
+                  [disabled]="trabajando() || segundosParaReenviar() > 0">
+            {{ segundosParaReenviar() > 0
+              ? 'Reenviar en ' + segundosParaReenviar() + ' s'
+              : 'No me llegó, reenviar' }}
+          </button>
+          <button class="b-suave b-chico" type="button" (click)="corregirDatos()">
+            Corregir mis datos
+          </button>
+        </div>
+
+        <p class="f-ayuda centrado espacio">
+          Si no aparece, revisa la carpeta de spam o correo no deseado.
+        </p>
+      </div>
+    }
+  </div>
+
+  @if (demo()) {
+    <p class="texto-chico texto-suave centrado espacio aparece">
+      Cuentas de prueba: <strong>mesero&#64;restaurante.local / Mesero1234</strong> (empleado) y
+      <strong>cliente&#64;restaurante.local / Cliente1234</strong> (cliente).
+      La del administrador se configura en el servidor.
+    </p>
+  }
+</section>

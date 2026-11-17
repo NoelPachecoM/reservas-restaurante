@@ -1,0 +1,76 @@
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.grupo {
+  margin: 30px 0 12px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid var(--principal-palido);
+  animation: entra-lado var(--lento) var(--suave) backwards;
+}
+
+.lista {
+  display: grid;
+  gap: 2px;
+}
+
+.renglon {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 13px 14px 13px 16px;
+  border-radius: var(--radio-m);
+  cursor: pointer;
+  transition: background var(--rapido) ease, transform var(--normal) var(--suave),
+              box-shadow var(--normal) var(--suave);
+}
+
+/* Una barrita naranja aparece a la izquierda al pasar el puntero */
+.renglon::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: var(--radio-full);
+  background: var(--principal);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform var(--normal) var(--suave);
+}
+
+.renglon:hover {
+  background: var(--papel);
+  transform: translateX(3px);
+  box-shadow: var(--sombra-s);
+}
+
+.renglon:hover::before { transform: scaleY(1); }
+
+.renglon:hover .precio { color: var(--principal-claro); }
+
+.renglon:focus-visible {
+  outline: 2px solid var(--principal);
+  outline-offset: 2px;
+}
+
+.renglon h3 {
+  font-size: 1.02rem;
+  margin-bottom: 3px;
+}
+
+.etiquetas-renglon {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+
+.bloque { margin-top: 16px; font-weight: 600; }

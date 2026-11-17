@@ -1,0 +1,17 @@
+main {
+  min-height: calc(100vh - 210px);
+}
+
+.pie {
+  border-top: 1px solid var(--borde);
+  background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-2) 100%);
+  margin-top: 50px;
+  padding: 22px 0;
+}
+
+.pie-dentro {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}

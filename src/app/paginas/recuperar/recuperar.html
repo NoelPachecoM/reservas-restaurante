@@ -1,0 +1,53 @@
+<section class="ancho-angosto seccion">
+  <div class="c-caja">
+    <h1>Recuperar mi contraseña</h1>
+
+    @if (error()) { <div class="aviso aviso-error">{{ error() }}</div> }
+    @if (aviso()) { <div class="aviso aviso-ok">{{ aviso() }}</div> }
+
+    @if (paso() === 1) {
+      <p class="subtitulo">Escribe tu correo y te mandamos un código de 6 dígitos.</p>
+      <form (submit)="pedir(); $event.preventDefault()">
+        <label class="f-campo">
+          <span>Correo</span>
+          <input type="email" [value]="correo()" (input)="correo.set($any($event.target).value)"
+                 autocomplete="email" required />
+        </label>
+        <button class="b-principal b-ancho" type="submit" [disabled]="trabajando() || !correo().trim()">
+          {{ trabajando() ? 'Enviando…' : 'Mandarme el código' }}
+        </button>
+      </form>
+    }
+
+    @if (paso() === 2) {
+      <p class="subtitulo">
+        Escribe el código que te llegó y tu contraseña nueva. El código vence en 20 minutos.
+      </p>
+      <form (submit)="cambiar(); $event.preventDefault()">
+        <label class="f-campo">
+          <span>Código</span>
+          <input [value]="codigo()" (input)="codigo.set($any($event.target).value)"
+                 inputmode="numeric" maxlength="6" placeholder="123456" required />
+        </label>
+        <label class="f-campo">
+          <span>Contraseña nueva</span>
+          <input type="password" [value]="contrasena()" (input)="contrasena.set($any($event.target).value)"
+                 autocomplete="new-password" required />
+          <span class="f-ayuda">Mínimo 8 caracteres, con letras y números.</span>
+        </label>
+        <button class="b-principal b-ancho" type="submit"
+                [disabled]="trabajando() || codigo().trim().length < 4 || contrasena().length < 8">
+          {{ trabajando() ? 'Guardando…' : 'Cambiar mi contraseña' }}
+        </button>
+      </form>
+      <p class="texto-chico centrado" style="margin-top: 14px">
+        <button class="b-suave b-chico" type="button" (click)="paso.set(1)">Pedir otro código</button>
+      </p>
+    }
+
+    @if (paso() === 3) {
+      <p>Listo. Te llevamos a la pantalla para entrar…</p>
+      <a routerLink="/entrar" class="b-principal">Entrar ahora</a>
+    }
+  </div>
+</section>
