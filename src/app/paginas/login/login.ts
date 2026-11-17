@@ -41,14 +41,6 @@ export class Login implements OnDestroy {
   private reloj: ReturnType<typeof setInterval> | null = null;
   private readonly volver = this.ruta.snapshot.queryParamMap.get('volver');
 
-  /** Las cuentas de prueba solo se enseñan si el servidor esta en modo demostracion. */
-  readonly demo = signal(false);
-
-  constructor() {
-    this.api.restaurante()
-      .then((r) => this.demo.set(r.demo === true))
-      .catch(() => undefined);
-  }
 
   ngOnDestroy(): void {
     this.detenerReloj();
